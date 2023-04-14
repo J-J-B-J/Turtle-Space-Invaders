@@ -1,6 +1,8 @@
 """Naughts and crosses"""
+import sys
+import time
 import turtle as t
-import random
+import tkinter as tk
 
 
 # Get the screen
@@ -13,6 +15,8 @@ screen.colormode(255)
 # Make the screen larger
 screen.setup(width=1.0, height=1.0, startx=None, starty=None)
 t.hideturtle()
+screen.update()
+t.title("Tic Tac Toe")
 
 # Optimise the screen size to make it the biggest ratio of 16:9 possible with
 # the current window size (basically makes the game compatible with every
@@ -46,10 +50,73 @@ else:
 pos = lambda x_pos, y_pos: (x(x_pos), y(y_pos))
 
 
-player_names = [
-    t.textinput(f"Player {n} Name", f"Enter player {n} name:")
-    for n in range(1, 3)
-]
+setup_window = tk.Tk()
+setup_window.title("Tic Tac Toe")
+setup_window.geometry("200x220")
+setup_window.resizable(False, False)
+
+p1_var = tk.StringVar(setup_window, "Player 1")
+p2_var = tk.StringVar(setup_window, "Player 2")
+
+p1_entry = tk.Entry(setup_window, textvariable=p1_var)
+p2_entry = tk.Entry(setup_window, textvariable=p2_var)
+
+tk.Label(setup_window, text="Player 1 Name").pack()
+p1_entry.pack()
+tk.Label(setup_window, text="Player 2 Name").pack()
+p2_entry.pack()
+
+done = False
+
+
+def start(*_):
+    """Start the game"""
+    global done
+    done = True
+
+
+round_count_var = tk.StringVar(setup_window, "1")
+error_var = tk.StringVar(setup_window, "\n")
+
+submit_btn = tk.Button(setup_window, text="START")
+submit_btn.bind("<Button-1>", start)
+
+
+def check_round_count_var(*_):
+    """Check that round_var is valid."""
+    global error_var
+    round_count = round_count_var.get()
+    try:
+        if int(round_count) < 1 or int(round_count) % 2 == 0:
+            raise ValueError
+    except ValueError:
+        error_var.set("Please enter a positive integer\n that is not"
+                      " divisible by 2!")
+        submit_btn.unbind("<Button-1>")
+        submit_btn.config(state="disabled")
+    else:
+        error_var.set('\n')
+        submit_btn.bind("<Button-1>", start)
+        submit_btn.config(state="normal")
+
+
+round_count_var.trace_add("write", callback=check_round_count_var)
+round_count_entry = tk.Entry(setup_window, textvariable=round_count_var)
+tk.Label(setup_window, text="Best of...").pack()
+round_count_entry.pack()
+
+error_label = tk.Label(setup_window, textvariable=error_var)
+submit_btn.pack()
+error_label.pack()
+
+while not done:
+    setup_window.update()
+
+setup_window.destroy()
+del setup_window
+
+player_names = [p1_var.get(), p2_var.get()]
+rounds_to_play = int(round_count_var.get())
 
 
 # Create the buttons
@@ -86,12 +153,13 @@ class Button:
             self.turtle.circle(x(100), 360)
             self.turtle.penup()
 
-    def set_state(self, state: int):
+    def set_state(self, state: int, update: bool = True):
         """Set the state of the button and redraw the screen"""
         self.state = state
         self.turtle.clear()
         self.draw()
-        t.update()
+        if update:
+            t.update()
 
     def intersects_point(self, x_coord, y_coord) -> bool:
         """Check if the point intersects this button"""
@@ -155,8 +223,49 @@ def check_board():
         return states[0]
 
 
+rounds_so_far = 0
+draw_grid()
+screen.update()
+
+scores = [0, 0]
+
+score_turtle_1 = t.Turtle()
+score_turtle_1.hideturtle()
+score_turtle_2 = t.Turtle()
+score_turtle_2.hideturtle()
+
+
+def draw_scores(winner_num):
+    """Draw the scores to the screen"""
+    if winner_num == 1:
+        score_turtle_1.clear()
+        score_turtle_1.penup()
+        score_turtle_1.goto(-650, -100)
+        score_turtle_1.color((20, 63, 107))
+        score_turtle_1.write(scores[0], align="center",
+                           font=("Helvetica", 500, ""))
+    else:
+        score_turtle_2.clear()
+        score_turtle_2.penup()
+        score_turtle_2.goto(650, -100)
+        score_turtle_2.color((245, 83, 83))
+        score_turtle_2.write(scores[1], align="center",
+                           font=("Helvetica", 500, ""))
+
+
+draw_scores(1)
+draw_scores(2)
+
+
 def winner(winner_num: int):
     """There is a winner!"""
+    global rounds_so_far
+
+    rounds_so_far += 1
+    scores[winner_num-1] += 1
+
+    draw_scores(winner_num)
+
     winner_turtle = t.Turtle()
     winner_turtle.hideturtle()
     winner_turtle.penup()
@@ -177,6 +286,27 @@ def winner(winner_num: int):
         font=('Helvetica', 50, 'normal')
     )
 
+    start_time = time.time()
+    while time.time() < start_time + 3:
+        t.update()
+
+    winner_turtle.clear()
+
+    if rounds_so_far >= rounds_to_play:
+        t.exitonclick()
+        try:
+            while True:
+                t.update()
+        except t.Terminator:
+            sys.exit(0)
+    else:
+        for row in button_grid:
+            for button in row:
+                button.set_state(0, False)
+
+        screen.onclick(handle_click)
+        screen.listen()
+
 
 def handle_click(mouse_x, mouse_y) -> None:
     """Handle a mouse click"""
@@ -189,13 +319,14 @@ def handle_click(mouse_x, mouse_y) -> None:
                 winner_num = check_board()
                 if winner_num != 0:
                     print(f"Player {winner_num} wins!")
-                    winner(winner_num)
                     screen.onclick(None)
+                    winner(winner_num)
                 return
 
 
-draw_grid()
+for button_row in button_grid:
+    for button in button_row:
+        button.set_state(0, False)
 screen.onclick(handle_click)
 screen.listen()
-screen.update()
 screen.mainloop()
