@@ -3,6 +3,7 @@ import sys
 import time
 import turtle as t
 import tkinter as tk
+from util import optimised_coord_funcs
 
 
 # Get the screen
@@ -18,36 +19,10 @@ t.hideturtle()
 screen.update()
 t.title("Tic Tac Toe")
 
-# Optimise the screen size to make it the biggest ratio of 16:9 possible with
-# the current window size (basically makes the game compatible with every
-# screen size)
-width = screen.window_width()
-height = screen.window_height()
-relative_width = width * 16
-relative_height = height * 9
-
-
-def coord(original_dimension: int, design_size: int, production_size: int):
-    """Scale a coordinate to the correct size for the screen"""
-    return int((original_dimension / design_size) * production_size)
-
-
-if relative_width > relative_height:
-    # The screen is slightly wider than 16:9, so the top and bottom edges will
-    # be unused
-    x = lambda num: coord(num, 1600, int((height/9)*16))
-    y = lambda num: coord(num, 900, height)
-elif relative_height > relative_width:
-    # The screen is slightly taller than 16:9, so the left and right edges will
-    # be unused
-    x = lambda num: coord(num, 1600, width)
-    y = lambda num: coord(num, 900, int((width/16)*9))
-else:
-    # The screen is exactly 16:9, so all edges will be exactly 16:9
-    x = lambda num: coord(num, 1600, width)
-    y = lambda num: coord(num, 900, height)
-
-pos = lambda x_pos, y_pos: (x(x_pos), y(y_pos))
+x, y, pos = optimised_coord_funcs(
+    screen.window_width(), screen.window_height(),
+    1600, 900
+)
 
 
 setup_window = tk.Tk()
@@ -240,14 +215,14 @@ def draw_scores(winner_num):
     if winner_num == 1:
         score_turtle_1.clear()
         score_turtle_1.penup()
-        score_turtle_1.goto(-650, -100)
+        score_turtle_1.goto(pos(-600, -100))
         score_turtle_1.color((20, 63, 107))
         score_turtle_1.write(scores[0], align="center",
                            font=("Helvetica", 500, ""))
     else:
         score_turtle_2.clear()
         score_turtle_2.penup()
-        score_turtle_2.goto(650, -100)
+        score_turtle_2.goto(pos(600, -100))
         score_turtle_2.color((245, 83, 83))
         score_turtle_2.write(scores[1], align="center",
                            font=("Helvetica", 500, ""))
