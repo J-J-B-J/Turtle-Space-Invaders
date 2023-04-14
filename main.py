@@ -5,10 +5,10 @@ from functools import partial
 
 class Game:
     """A class to store the data for a game"""
-    def __init__(self, name, description, run_func: callable):
+    def __init__(self, name, description, file_name: str):
         self.name = name
         self.description = description
-        self.run = run_func
+        self.file_name = file_name
 
 
 class Menu:
@@ -37,7 +37,13 @@ class Menu:
         self.window.resizable(False, False)
 
         self.game_range_start = 0
-        self.games = []
+        self.games = [
+            Game(
+                "O+X",
+                "Entertaining",
+                "O's and X's.py"
+            )
+        ]
 
         self.section_objects = []
 
@@ -93,16 +99,16 @@ class Menu:
         frm_games.pack()
 
         def increase_range(*_):
-            """Increase the range of notices shown"""
+            """Increase the range of games shown"""
             self.game_range_start += 5
             self.menu()
 
         def decrease_range(*_):
-            """Decrease the range of notices shown"""
+            """Decrease the range of games shown"""
             self.game_range_start -= 5
             self.menu()
 
-        def open_notice(this_game: Game, *_):
+        def open_game(this_game: Game, *_):
             """Show the detail view for a game"""
             game_window = tk.Tk()
             game_window.title(this_game.name)
@@ -127,6 +133,14 @@ class Menu:
             )
             lbl_description.pack(side=tk.TOP)
 
+            open_button = tk.Button(
+                game_window,
+                text="▶️"
+            )
+            open_button.bind("<Button-1>", partial(__import__,
+                                                   this_game.file_name))
+            open_button.pack()
+
             game_window.mainloop()
 
         for game in self.games[self.game_range_start:self.game_range_start+5]:
@@ -134,20 +148,20 @@ class Menu:
             self.section_objects.append(frm_game)
             frm_game.pack()
 
-            lbl_notice_title = tk.Label(
+            lbl_game_name = tk.Label(
                 frm_game,
-                text=game.title,
+                text=game.name,
                 width=50,
                 height=2,
                 wraplength=390,
                 borderwidth=3,
                 relief="raised"
             )
-            self.section_objects.append(lbl_notice_title)
-            lbl_notice_title.pack(side=tk.LEFT)
-            lbl_notice_title.bind(
+            self.section_objects.append(lbl_game_name)
+            lbl_game_name.pack(side=tk.LEFT)
+            lbl_game_name.bind(
                 "<Button-1>",
-                partial(open_notice, game)
+                partial(open_game, game)
             )
 
         self.create_increase_decrease(
