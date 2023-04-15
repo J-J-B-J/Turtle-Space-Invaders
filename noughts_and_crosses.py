@@ -8,6 +8,7 @@ from importlib import reload
 
 PLAYER1_COLOUR = (182, 235, 122)
 PLAYER2_COLOUR = (251, 120, 19)
+TIE_COLOUR = (23, 112, 110)
 
 
 def run():
@@ -22,9 +23,10 @@ def run():
     screen.colormode(255)
     # Make the screen larger
     screen.setup(width=1.0, height=1.0, startx=None, starty=None)
+    # t.hideturtle()
     screen.update()
     screen.title("Tic Tac Toe")
-    screen.bgpic("img/blackboard.gif")
+    screen.bgcolor(13, 122, 43)
 
     x, y, pos = optimised_coord_funcs(
         screen.window_width(), screen.window_height(),
@@ -196,6 +198,13 @@ def run():
         if max(states) == min(states) and states[0] > 0:
             return states[0]
 
+        states = [
+            button_grid[x_cor][y_cor].state for x_cor in range(3)
+            for y_cor in range(3)
+        ]
+        if min(states) > 0:
+            return 3
+
         return 0
 
     rounds_so_far = 0
@@ -209,9 +218,9 @@ def run():
     score_turtle_2 = t.Turtle()
     score_turtle_2.hideturtle()
 
-    def draw_scores(winner_num):
+    def draw_scores(player_num):
         """Draw the scores to the screen"""
-        if winner_num == 1:
+        if player_num == 1:
             score_turtle_1.clear()
             score_turtle_1.penup()
             score_turtle_1.goto(pos(-600, -100))
@@ -247,15 +256,15 @@ def run():
         """There is a winner!"""
         nonlocal rounds_so_far, starting_player, player_turn
 
-        rounds_so_far += 1
-        scores[winner_num - 1] += 1
-
-        draw_scores(winner_num)
+        if winner_num != 3:
+            rounds_so_far += 1
+            scores[winner_num - 1] += 1
+            draw_scores(winner_num)
 
         winner_turtle = t.Turtle()
         winner_turtle.hideturtle()
         winner_turtle.penup()
-        winner_turtle.fillcolor([PLAYER1_COLOUR, (PLAYER2_COLOUR)]
+        winner_turtle.fillcolor([PLAYER1_COLOUR, PLAYER2_COLOUR, TIE_COLOUR]
                                 [winner_num - 1])
         winner_turtle.goto(pos(-800, 350))
         winner_turtle.begin_fill()
@@ -266,12 +275,21 @@ def run():
 
         winner_turtle.goto(pos(0, 275))
 
-        winner_turtle.color([PLAYER1_COLOUR, (PLAYER2_COLOUR)][2 - winner_num])
-        winner_turtle.write(
-            f"{player_names[winner_num - 1]} wins!",
-            align='center',
-            font=('Helvetica', 50, 'normal')
-        )
+        if winner_num != 3:
+            winner_turtle.color(
+                [PLAYER1_COLOUR, PLAYER2_COLOUR][2 - winner_num])
+            winner_turtle.write(
+                f"{player_names[winner_num - 1]} wins!",
+                align='center',
+                font=('Helvetica', 50, 'normal')
+            )
+        else:
+            winner_turtle.color(247, 247, 238)
+            winner_turtle.write(
+                f"Tie!",
+                align='center',
+                font=('Helvetica', 50, 'normal')
+            )
 
         start_time = time.time()
         while time.time() < start_time + 3:
