@@ -6,6 +6,10 @@ from util import optimised_coord_funcs
 from importlib import reload
 
 
+PLAYER1_COLOUR = (182, 235, 122)
+PLAYER2_COLOUR = (251, 120, 19)
+
+
 def run():
     """Run the game"""
     reload(t)
@@ -20,6 +24,7 @@ def run():
     screen.setup(width=1.0, height=1.0, startx=None, starty=None)
     screen.update()
     screen.title("Tic Tac Toe")
+    screen.bgpic("img/blackboard.gif")
 
     x, y, pos = optimised_coord_funcs(
         screen.window_width(), screen.window_height(),
@@ -108,7 +113,7 @@ def run():
             self.turtle.end_fill()
             self.turtle.pensize(x(5))
             if self.state == 1:
-                self.turtle.pencolor(20, 63, 107)
+                self.turtle.pencolor(PLAYER1_COLOUR)
                 self.turtle.goto(pos(self.x - 100, self.y - 100))
                 self.turtle.pendown()
                 self.turtle.goto(pos(self.x + 100, self.y + 100))
@@ -118,7 +123,7 @@ def run():
                 self.turtle.goto(pos(self.x - 100, self.y + 100))
                 self.turtle.penup()
             elif self.state == 2:
-                self.turtle.pencolor(245, 83, 83)
+                self.turtle.pencolor(PLAYER2_COLOUR)
                 self.turtle.goto(pos(self.x, self.y - 100))
                 self.turtle.seth(0)
                 self.turtle.pendown()
@@ -155,7 +160,7 @@ def run():
         """Draw the grid"""
         grid_turtle.penup()
         grid_turtle.end_fill()
-        grid_turtle.pencolor(0, 0, 0)
+        grid_turtle.pencolor(255, 255, 255)
         grid_turtle.pensize(x(5))
         for line_x in [-135, 135]:
             grid_turtle.goto(pos(line_x, -405))
@@ -210,7 +215,7 @@ def run():
             score_turtle_1.clear()
             score_turtle_1.penup()
             score_turtle_1.goto(pos(-600, -100))
-            score_turtle_1.color((20, 63, 107))
+            score_turtle_1.color((PLAYER1_COLOUR))
             score_turtle_1.write(
                 scores[0],
                 align="center",
@@ -224,7 +229,7 @@ def run():
             score_turtle_2.clear()
             score_turtle_2.penup()
             score_turtle_2.goto(pos(600, -100))
-            score_turtle_2.color((245, 83, 83))
+            score_turtle_2.color((PLAYER2_COLOUR))
             score_turtle_2.write(
                 scores[1],
                 align="center",
@@ -250,7 +255,8 @@ def run():
         winner_turtle = t.Turtle()
         winner_turtle.hideturtle()
         winner_turtle.penup()
-        winner_turtle.fillcolor([(20, 63, 107), (245, 83, 83)][winner_num - 1])
+        winner_turtle.fillcolor([PLAYER1_COLOUR, (PLAYER2_COLOUR)]
+                                [winner_num - 1])
         winner_turtle.goto(pos(-800, 350))
         winner_turtle.begin_fill()
         winner_turtle.goto(pos(800, 350))
@@ -260,7 +266,7 @@ def run():
 
         winner_turtle.goto(pos(0, 275))
 
-        winner_turtle.color([(20, 63, 107), (245, 83, 83)][2 - winner_num])
+        winner_turtle.color([PLAYER1_COLOUR, (PLAYER2_COLOUR)][2 - winner_num])
         winner_turtle.write(
             f"{player_names[winner_num - 1]} wins!",
             align='center',
@@ -278,7 +284,7 @@ def run():
             try:
                 while True:
                     screen.update()
-            except screen.Terminator:
+            except t.Terminator:
                 return
         else:
             for row in button_grid:
