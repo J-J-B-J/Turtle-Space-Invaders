@@ -174,6 +174,7 @@ def draw_grid() -> None:
         grid_turtle.penup()
 
 
+starting_player = 1
 player_turn = 1
 
 
@@ -181,21 +182,23 @@ def check_board():
     """Chech to see if there is a winner"""
     for button_row in button_grid:
         states = [button.state for button in button_row]
-        if max(states) == min(states):
+        if max(states) == min(states) and states[0] > 0:
             return states[0]
 
     for col_num in range(3):
         states = [button_row[col_num].state for button_row in button_grid]
-        if max(states) == min(states):
+        if max(states) == min(states) and states[0] > 0:
             return states[0]
 
     states = [button_grid[num][num].state for num in range(3)]
-    if max(states) == min(states):
+    if max(states) == min(states) and states[0] > 0:
         return states[0]
 
     states = [button_grid[num][2-num].state for num in range(3)]
-    if max(states) == min(states):
+    if max(states) == min(states) and states[0] > 0:
         return states[0]
+
+    return 0
 
 
 rounds_so_far = 0
@@ -217,15 +220,29 @@ def draw_scores(winner_num):
         score_turtle_1.penup()
         score_turtle_1.goto(pos(-600, -100))
         score_turtle_1.color((20, 63, 107))
-        score_turtle_1.write(scores[0], align="center",
-                           font=("Helvetica", 500, ""))
+        score_turtle_1.write(
+            scores[0],
+            align="center",
+            font=(
+                "Helvetica",
+                int(500/len(str(scores[0]))),
+                ""
+            )
+        )
     else:
         score_turtle_2.clear()
         score_turtle_2.penup()
         score_turtle_2.goto(pos(600, -100))
         score_turtle_2.color((245, 83, 83))
-        score_turtle_2.write(scores[1], align="center",
-                           font=("Helvetica", 500, ""))
+        score_turtle_2.write(
+            scores[1],
+            align="center",
+            font=(
+                "Helvetica",
+                int(500 / len(str(scores[1]))),
+                ""
+            )
+        )
 
 
 draw_scores(1)
@@ -234,7 +251,7 @@ draw_scores(2)
 
 def winner(winner_num: int):
     """There is a winner!"""
-    global rounds_so_far
+    global rounds_so_far, starting_player, player_turn
 
     rounds_so_far += 1
     scores[winner_num-1] += 1
@@ -279,6 +296,9 @@ def winner(winner_num: int):
             for button in row:
                 button.set_state(0, False)
 
+        starting_player = 1 if starting_player == 2 else 2
+        player_turn = starting_player
+
         screen.onclick(handle_click)
         screen.listen()
 
@@ -292,7 +312,7 @@ def handle_click(mouse_x, mouse_y) -> None:
                 button.set_state(player_turn)
                 player_turn = 1 if player_turn == 2 else 2
                 winner_num = check_board()
-                if winner_num != 0:
+                if winner_num > 0:
                     print(f"Player {winner_num} wins!")
                     screen.onclick(None)
                     winner(winner_num)
