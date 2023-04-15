@@ -2,13 +2,18 @@
 import tkinter as tk
 from functools import partial
 
+import noughts_and_crosses
+
 
 class Game:
     """A class to store the data for a game"""
-    def __init__(self, name, description, file_name: str):
+    def __init__(self, name: str, subheading: str, history: str,
+                 how_to_play: str, play_func: callable):
         self.name = name
-        self.description = description
-        self.file_name = file_name
+        self.subheading = subheading
+        self.history = history
+        self.how_to_play = how_to_play
+        self.play = play_func
 
 
 class Menu:
@@ -39,10 +44,32 @@ class Menu:
         self.game_range_start = 0
         self.games = [
             Game(
-                "O+X",
-                "Entertaining",
-                "O's and X's.py"
-            )
+                "Tic Tac Toe",
+                "A fast and fascinating game which will keep you entertained "
+                "for minutes!",
+                "It's VERY debatable where the name 'Tic Tac Toe' came from. "
+                "Some say that it came from the sound of the tapping of a "
+                "pencil, while others say it may come from a 16th century "
+                "version of Backgammon. The game itself may have come from "
+                "ancient Egypt or Mesopotamia, or a game called 'tictack.'",
+                "This is a two-player game. Each takes turns putting their "
+                "symbols on a 3x3 grid. The first person to have 3 of their "
+                "symbol in a row (horizontally, vertically or diagonally) "
+                "wins!",
+                noughts_and_crosses.run
+            ),
+            # Game(
+            #     "Space Invaders",
+            #     "This retro rocketry classic will have you shooting aliens in "
+            #     "no time!",
+            #     "The game was created in 1978 by Japanese game designer "
+            #     "Tomohiro Nishikado. It is widely reguarded as the first and "
+            #     "trailblazing 'shoot 'em up' game.",
+            #     "Use the left and right arrow keys to move your ship along "
+            #     "the bottom of the screen. Press space to shoot bullets. Try "
+            #     "to hit the aliens moving along the screen.",
+            #     space_invaders.run
+            # )
         ]
 
         self.section_objects = []
@@ -126,19 +153,30 @@ class Menu:
             )
             lbl_name.pack(side=tk.TOP)
 
-            lbl_description = tk.Label(
+            lbl_subheading = tk.Label(
                 game_window,
-                text=this_game.description,
+                text=this_game.subheading,
                 wraplength=490
             )
-            lbl_description.pack(side=tk.TOP)
+            lbl_subheading.pack(side=tk.TOP)
+            lbl_history = tk.Label(
+                game_window,
+                text=this_game.history,
+                wraplength=490
+            )
+            lbl_history.pack(side=tk.TOP)
+            lbl_how_to_play = tk.Label(
+                game_window,
+                text=this_game.how_to_play,
+                wraplength=490
+            )
+            lbl_how_to_play.pack(side=tk.TOP)
 
             open_button = tk.Button(
                 game_window,
                 text="▶️"
             )
-            open_button.bind("<Button-1>", partial(__import__,
-                                                   this_game.file_name))
+            open_button.bind("<Button-1>", lambda _: this_game.play())
             open_button.pack()
 
             game_window.mainloop()
