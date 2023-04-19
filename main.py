@@ -3,6 +3,7 @@ import tkinter as tk
 from functools import partial
 
 import noughts_and_crosses
+import etch_sketch
 
 
 class Game:
@@ -58,18 +59,16 @@ class Menu:
                 "wins!",
                 noughts_and_crosses.run
             ),
-            # Game(
-            #     "Space Invaders",
-            #     "This retro rocketry classic will have you shooting aliens in "
-            #     "no time!",
-            #     "The game was created in 1978 by Japanese game designer "
-            #     "Tomohiro Nishikado. It is widely reguarded as the first and "
-            #     "trailblazing 'shoot 'em up' game.",
-            #     "Use the left and right arrow keys to move your ship along "
-            #     "the bottom of the screen. Press space to shoot bullets. Try "
-            #     "to hit the aliens moving along the screen.",
-            #     space_invaders.run
-            # )
+            Game(
+                "Etch a Sketch",
+                "The tricky drawing game that's easy to do and fun to play!",
+                "The etch a sketch was invented by the French André "
+                "Cassagnes. It is a mechanical toy that uses metallic "
+                "powder, a magnet and knobs to draw continuously.",
+                "Use the W, S, A and D keys to control the line. press P to "
+                "reset.",
+                etch_sketch.run
+            )
         ]
 
         self.section_objects = []
