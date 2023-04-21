@@ -315,6 +315,27 @@ def run():
             screen.onclick(handle_click)
             screen.listen()
 
+    turn_turtle = t.Turtle()
+    turn_turtle.hideturtle()
+    turn_turtle.penup()
+    turn_turtle.width(5)
+
+    def draw_turn(turn_num: int):
+        """Indicate that it is a player's turn"""
+        turn_turtle.clear()
+        if turn_num == 1:
+            turn_turtle.goto(pos(-700, -100))
+            turn_turtle.pencolor(PLAYER1_COLOUR)
+            turn_turtle.pendown()
+            turn_turtle.goto(pos(-500, -100))
+            turn_turtle.penup()
+        else:
+            turn_turtle.goto(pos(700, -100))
+            turn_turtle.pencolor(PLAYER2_COLOUR)
+            turn_turtle.pendown()
+            turn_turtle.goto(pos(500, -100))
+            turn_turtle.penup()
+
     def handle_click(mouse_x, mouse_y) -> None:
         """Handle a mouse click"""
         nonlocal player_turn
@@ -324,6 +345,7 @@ def run():
                                            mouse_y) and button.state == 0:
                     button.set_state(player_turn)
                     player_turn = 1 if player_turn == 2 else 2
+                    draw_turn(player_turn)
                     winner_num = check_board()
                     if winner_num > 0:
                         screen.onclick(lambda *_: None)
@@ -333,6 +355,8 @@ def run():
     for button_row in button_grid:
         for button in button_row:
             button.set_state(0, False)
+    draw_turn(1)
+
     screen.onclick(handle_click)
     screen.listen()
     screen.mainloop()
