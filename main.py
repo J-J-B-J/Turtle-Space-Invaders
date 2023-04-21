@@ -4,6 +4,7 @@ from functools import partial
 
 import noughts_and_crosses
 import etch_sketch
+import guess_the_number
 
 
 class Game:
@@ -68,6 +69,13 @@ class Menu:
                 "Use the W, S, A and D keys to control the line. press P to "
                 "reset.",
                 etch_sketch.run
+            ),
+            Game(
+                "Guess the Number",
+                "A strategy math game",
+                "Nothing could be found on the history of the game",
+                "Guess the number! It is between 0 and 99 inclusive.",
+                guess_the_number.run
             )
         ]
 
