@@ -30,7 +30,8 @@ def run():
 
     class Bullet:
         """A class to manage a bullet"""
-        def __init__(self, x_pos, y_pos, speed=15, length=1, width=0.4):
+        def __init__(self, x_pos, y_pos, speed=15, length=1, width=0.4,
+                     fired_by_player=True):
             self.speed = speed
             self.turtle = t.Turtle()
             self.turtle.penup()
@@ -38,11 +39,12 @@ def run():
             self.turtle.shape("square")
             self.turtle.fillcolor((255, 255, 255))
             self.turtle.shapesize(length, width, 0)
+            self.fired_by_player = fired_by_player
 
         def move(self, aliens=None):
             """Move the bullet"""
-            if aliens is None:
-                aliens = []
+            if aliens == None:
+                aliens = [   ]
 
             if not self.turtle.isvisible():
                 return
@@ -52,13 +54,14 @@ def run():
                 self.turtle.ycor() + self.speed
             )
 
-            for alien in aliens:
-                if alien.intersectspoint(
-                        self.turtle.xcor(),
-                        self.turtle.ycor()
-                ):
-                    alien.turtle.hideturtle()
-                    self.turtle.hideturtle()
+            if self.fired_by_player:
+                for alien in aliens:
+                    if alien.intersectspoint(
+                            self.turtle.xcor(),
+                            self.turtle.ycor()
+                    ):
+                        alien.turtle.hideturtle()
+                        self.turtle.hideturtle()
 
     bullets = []
 
@@ -152,7 +155,7 @@ def run():
             if self.firing and self.time_last_bullet < time.time() - 0.5:
                 bullets.append(Bullet(
                     self.turtle.xcor(),
-                    self.turtle.ycor() + y(80)
+                    self.turtle.ycor() + y(80),
                 ))
                 self.time_last_bullet = time.time()
 
@@ -184,7 +187,8 @@ def run():
                     bullets.append(Bullet(
                         self.turtle.xcor(),
                         self.turtle.ycor(),
-                        -5
+                        -5,
+                        fired_by_player=False
                     ))
                     self.time_last_bullet = time.time()
 
@@ -261,7 +265,7 @@ def run():
                 aliens.remove(alien)
 
             for bullet in bullets:
-                bullet.move()
+                bullet.move(aliens)
 
         last_frame_time = time.time_ns()/1_000_000
         screen.update()
