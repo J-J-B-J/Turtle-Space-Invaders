@@ -30,6 +30,7 @@ def run():
 
     class Bullet:
         """A class to manage a bullet"""
+
         def __init__(self, x_pos, y_pos, speed=15, length=1, width=0.4,
                      fired_by_player=True):
             self.speed = speed
@@ -41,10 +42,10 @@ def run():
             self.turtle.shapesize(length, width, 0)
             self.fired_by_player = fired_by_player
 
-        def move(self, aliens=None):
+        def move(self, player=None, aliens=None):
             """Move the bullet"""
             if aliens == None:
-                aliens = [   ]
+                aliens = []
 
             if not self.turtle.isvisible():
                 return
@@ -62,6 +63,13 @@ def run():
                     ):
                         alien.turtle.hideturtle()
                         self.turtle.hideturtle()
+            else:
+                if player.intersectspoint(
+                        self.turtle.xcor(),
+                        self.turtle.ycor()
+                ):
+                    player.turtle.hideturtle()
+                    self.turtle.hideturtle()
 
     bullets = []
 
@@ -159,8 +167,28 @@ def run():
                 ))
                 self.time_last_bullet = time.time()
 
+        def intersectspoint(self, x_pos, y_pos) -> bool:
+            """Check if the player intersects a point"""
+            tx = self.turtle.xcor()
+            ty = self.turtle.ycor()
+            # Check the fins
+            if tx - 50 <= x_pos <= tx + 50 and ty - 35 <= y_pos <= ty - 15:
+                self.turtle.hideturtle()
+                return True
+            # Check the passenger compartment
+            if tx - 28 <= x_pos <= tx + 28 and ty - 15 <= y_pos <= ty + 60:
+                self.turtle.hideturtle()
+                return True
+            # Check the nose
+            if 2 * (x_pos - tx) + (y_pos - ty) < 105 and -2 * (x_pos - tx) + (
+                    y_pos - ty) < 105 and y_pos - ty > 50:
+                self.turtle.hideturtle()
+                return True
+            return False
+
     class Alien:
         """A class to manage an Alien ship"""
+
         def __init__(self, x_pos, y_pos):
             self.turtle = t.Turtle()
             self.turtle.penup()
@@ -173,7 +201,8 @@ def run():
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the alien intersects a point"""
-            if self.turtle.xcor() - 50 <= x_pos <= self.turtle.xcor() + 50 and\
+            if self.turtle.xcor() - 50 <= x_pos <= self.turtle.xcor() + 50 \
+                    and \
                     self.turtle.ycor() - 27 <= y_pos <= self.turtle.ycor():
                 self.turtle.hideturtle()
                 return True
@@ -182,7 +211,7 @@ def run():
 
         def generate_bullet(self, alien_count):
             """Fire a bullet"""
-            if randint(0, 1500 - (10*(55-alien_count))) == 0:
+            if randint(0, 1500 - (10 * (55 - alien_count))) == 0:
                 if self.time_last_bullet < time.time() - 2:
                     bullets.append(Bullet(
                         self.turtle.xcor(),
@@ -197,22 +226,22 @@ def run():
     aliens = [Alien(x(x_pos), y(y_pos)) for x_pos in range(-550, 551, 110)
               for y_pos in range(100, 401, 75)]
 
-    last_frame_time = time.time_ns()/1_000_000 - 10
+    last_frame_time = time.time_ns() / 1_000_000 - 10
 
     alien_direction = 1
 
     def alien_speed():
         """Get the alien speed"""
-        return 0.1 + (0.15 * (55-len(aliens)))
+        return 0.1 + (0.15 * (55 - len(aliens)))
 
     while True:
         if not aliens:
             print("You WIN!")
             return
 
-        current_time = time.time_ns()/1_000_000
+        current_time = time.time_ns() / 1_000_000
         time_diff = current_time - last_frame_time
-        for _ in range(int(time_diff/10)):
+        for _ in range(int(time_diff / 10)):
             player.move(aliens)
 
             alien_xs = [alien.turtle.xcor() for alien in aliens]
@@ -222,7 +251,7 @@ def run():
             alien_ys = [alien.turtle.ycor() for alien in aliens]
             min_alien_y = min(alien_ys)
 
-            if min(alien_ys) < y(-240):
+            if min_alien_y < y(-240) or (not player.turtle.isvisible()):
                 # Aliens have caught up, game ends
                 print("Game Over!")
                 return
@@ -253,7 +282,7 @@ def run():
                     alien_bottom_of_column = True
                     for alien_2 in aliens:
                         if alien_2.turtle.xcor() == alien.turtle.xcor() and \
-                                    alien_2.turtle.ycor() < alien.turtle.ycor():
+                                alien_2.turtle.ycor() < alien.turtle.ycor():
                             alien_bottom_of_column = False
                             break
 
@@ -263,11 +292,18 @@ def run():
                     aliens_to_delete.append(alien)
             for alien in aliens_to_delete:
                 aliens.remove(alien)
+                del alien
 
+            bullets_to_delete = []
             for bullet in bullets:
-                bullet.move(aliens)
+                bullet.move(player, aliens)
+                if bullet.turtle.ycor() < -500:
+                    bullets_to_delete.append(bullet)
+            for bullet in bullets_to_delete:
+                bullets.remove(bullet)
+                del bullet
 
-        last_frame_time = time.time_ns()/1_000_000
+        last_frame_time = time.time_ns() / 1_000_000
         screen.update()
 
 
