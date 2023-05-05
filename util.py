@@ -1,4 +1,5 @@
 """Utility functions to be used by many games"""
+import time
 
 
 def optimised_coord_funcs(width, height, original_width, original_height):
@@ -32,3 +33,16 @@ def optimised_coord_funcs(width, height, original_width, original_height):
     pos = lambda x_pos, y_pos: (x(x_pos), y(y_pos))
 
     return x, y, pos
+
+
+def time_ms():
+    """Get the time in milliseconds"""
+    return time.time_ns()/1_000_000
+
+
+def wait_ms(ms: int, screen):
+    """Wait a certian number of milliseconds while updating the screen"""
+    start_time = time_ms()
+    target_time = start_time + ms
+    while time_ms() < target_time:
+        screen.update()

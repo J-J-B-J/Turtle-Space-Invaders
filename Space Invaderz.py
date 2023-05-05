@@ -1,9 +1,9 @@
 """A game of space invaderz"""
 import time
 import turtle as t
-from util import optimised_coord_funcs
+from util import *
 from importlib import reload
-from random import randint
+from random import randint, choice
 
 
 def run():
@@ -42,10 +42,10 @@ def run():
             self.turtle.shapesize(length, width, 0)
             self.fired_by_player = fired_by_player
 
-        def move(self, player=None, aliens=None):
+        def move(self, game_player=None, game_aliens=None):
             """Move the bullet"""
-            if aliens == None:
-                aliens = []
+            if game_aliens is None:
+                game_aliens = []
 
             if not self.turtle.isvisible():
                 return
@@ -56,7 +56,7 @@ def run():
             )
 
             if self.fired_by_player:
-                for alien in aliens:
+                for alien in game_aliens:
                     if alien.intersectspoint(
                             self.turtle.xcor(),
                             self.turtle.ycor()
@@ -64,7 +64,7 @@ def run():
                         alien.turtle.hideturtle()
                         self.turtle.hideturtle()
             else:
-                if player.intersectspoint(
+                if game_player.intersectspoint(
                         self.turtle.xcor(),
                         self.turtle.ycor()
                 ):
@@ -88,7 +88,7 @@ def run():
             self.firing = False
             self.time_last_bullet = time.time() - 60
 
-        def move(self, aliens):
+        def move(self):
             """Move"""
             self.generate_bullet()
 
@@ -202,8 +202,7 @@ def run():
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the alien intersects a point"""
             if self.turtle.xcor() - 50 <= x_pos <= self.turtle.xcor() + 50 \
-                    and \
-                    self.turtle.ycor() - 27 <= y_pos <= self.turtle.ycor():
+                    and self.turtle.ycor() - 27 <= y_pos <= self.turtle.ycor():
                 self.turtle.hideturtle()
                 return True
             else:
@@ -226,6 +225,81 @@ def run():
     aliens = [Alien(x(x_pos), y(y_pos)) for x_pos in range(-550, 551, 110)
               for y_pos in range(100, 401, 75)]
 
+    def end_screen(win: bool):
+        """Show the end screen"""
+        screen.clearscreen()
+        screen.bgcolor(0, 0, 0)
+
+        end_turtle = t.Turtle()
+        end_turtle.hideturtle()
+        end_turtle.penup()
+        end_turtle.goto(0, 0)
+        end_turtle.color(1, 1, 1)
+        if win:
+            end_turtle.write(
+                "You Win!",
+                align="center",
+                font=("Helvetica", 50, "normal")
+            )
+        else:
+            end_turtle.write(
+                "You Lose!",
+                align="center",
+                font=("Helvetica", 50, "normal")
+            )
+        wait_ms(500, screen)
+        end_turtle.goto(0, -25)
+        if win:
+            end_turtle.write(
+                choice([
+                    "ethay ogurtfray isyay alsoyay ursedcay.",
+                    "You sent the Romulans back in time with red matter!",
+                    "Looks like you've won! Go drink a hot chocolate and watch"
+                    " some TV or something.",
+                    "Reward yourself with a 3D printed Blue or Gold duck from"
+                    " Ethan Phillips for only 50¢!",
+                    "Tip: For a challenge, try destroying the aliens in the"
+                    " middle first to speed them up.",
+                ]),
+                align="center",
+                font=("Helvetica", 20, "normal")
+            )
+        else:
+            end_turtle.write(
+                choice([
+                    "Better luck next time!",
+                    "You were attacked by Romulans!",
+                    "You'd better play again!",
+                    "Practice makes perfect!",
+                    "Tip: Try destroying the aliens on the edge first to slow"
+                    " them down.",
+                ]),
+                align="center",
+                font=("Helvetica", 20, "normal")
+            )
+        wait_ms(1000, screen)
+        end_turtle.goto(0, -50)
+        end_turtle.write(
+                "Press Space to exit.",
+                align="center",
+                font=("Helvetica", 15  , "normal")
+            )
+
+        done = False
+
+        def finish():
+            """Set done to true"""
+            nonlocal done
+            done = True
+
+        screen.onkeypress(finish, "space")
+        screen.listen()
+
+        while not done:
+            screen.update()
+
+        return
+
     last_frame_time = time.time_ns() / 1_000_000 - 10
 
     alien_direction = 1
@@ -237,12 +311,13 @@ def run():
     while True:
         if not aliens:
             print("You WIN!")
+            end_screen(True)
             return
 
         current_time = time.time_ns() / 1_000_000
         time_diff = current_time - last_frame_time
         for _ in range(int(time_diff / 10)):
-            player.move(aliens)
+            player.move()
 
             alien_xs = [alien.turtle.xcor() for alien in aliens]
             max_alien_x = max(alien_xs)
@@ -254,6 +329,7 @@ def run():
             if min_alien_y < y(-240) or (not player.turtle.isvisible()):
                 # Aliens have caught up, game ends
                 print("Game Over!")
+                end_screen(False)
                 return
 
             if max_alien_x >= 650:
