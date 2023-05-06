@@ -196,7 +196,6 @@ def run():
             t.register_shape("assets/img/alien.gif")
             self.turtle.shape("assets/img/alien.gif")
             self.turtle.fillcolor((255, 255, 255))
-            self.turtle.shapesize(1, 0.4, 0)
             self.time_last_bullet = time.time() - 60
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
@@ -215,7 +214,7 @@ def run():
                     bullets.append(Bullet(
                         self.turtle.xcor(),
                         self.turtle.ycor(),
-                        -5,
+                        y(-5),
                         fired_by_player=False
                     ))
                     self.time_last_bullet = time.time()
@@ -233,22 +232,22 @@ def run():
         end_turtle = t.Turtle()
         end_turtle.hideturtle()
         end_turtle.penup()
-        end_turtle.goto(0, 0)
+        end_turtle.goto(pos(0, 0))
         end_turtle.color(1, 1, 1)
         if win:
             end_turtle.write(
                 "You Win!",
                 align="center",
-                font=("Helvetica", 50, "normal")
+                font=("Helvetica", int(y(50)), "normal")
             )
         else:
             end_turtle.write(
                 "You Lose!",
                 align="center",
-                font=("Helvetica", 50, "normal")
+                font=("Helvetica", int(y(50)), "normal")
             )
         wait_ms(500, screen)
-        end_turtle.goto(0, -25)
+        end_turtle.goto(pos(0, -25))
         if win:
             end_turtle.write(
                 choice([
@@ -262,7 +261,7 @@ def run():
                     " middle first to speed them up.",
                 ]),
                 align="center",
-                font=("Helvetica", 20, "normal")
+                font=("Helvetica", int(y(20)), "normal")
             )
         else:
             end_turtle.write(
@@ -275,14 +274,14 @@ def run():
                     " them down.",
                 ]),
                 align="center",
-                font=("Helvetica", 20, "normal")
+                font=("Helvetica", int(y(20)), "normal")
             )
         wait_ms(1000, screen)
-        end_turtle.goto(0, -50)
+        end_turtle.goto(pos(0, -50))
         end_turtle.write(
                 "Press Space to exit.",
                 align="center",
-                font=("Helvetica", 15  , "normal")
+                font=("Helvetica", int(y(15)), "normal")
             )
 
         done = False
@@ -306,7 +305,7 @@ def run():
 
     def alien_speed():
         """Get the alien speed"""
-        return 0.1 + (0.15 * (55 - len(aliens)))
+        return x(0.2 + (0.2 * (55 - len(aliens))))
 
     while True:
         if not aliens:
@@ -332,19 +331,19 @@ def run():
                 end_screen(False)
                 return
 
-            if max_alien_x >= 650:
+            if max_alien_x >= x(650):
                 alien_direction = -1
                 for alien in aliens:
                     alien.turtle.goto(
                         alien.turtle.xcor(),
-                        alien.turtle.ycor() - 10
+                        alien.turtle.ycor() - y(10)
                     )
-            elif min_alien_x <= -650:
+            elif min_alien_x <= x(-650):
                 alien_direction = 1
                 for alien in aliens:
                     alien.turtle.goto(
                         alien.turtle.xcor(),
-                        alien.turtle.ycor() - 10
+                        alien.turtle.ycor() - y(10)
                     )
 
             aliens_to_delete = []
@@ -373,9 +372,10 @@ def run():
             bullets_to_delete = []
             for bullet in bullets:
                 bullet.move(player, aliens)
-                if bullet.turtle.ycor() < -500:
+                if bullet.turtle.ycor() < y(-500):
                     bullets_to_delete.append(bullet)
             for bullet in bullets_to_delete:
+                bullet.turtle.hideturtle()
                 bullets.remove(bullet)
                 del bullet
 

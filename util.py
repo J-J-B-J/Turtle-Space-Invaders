@@ -11,20 +11,20 @@ def optimised_coord_funcs(width, height, original_width, original_height):
 
     def coord(original_dimension: int, design_size: int, production_size: int):
         """Scale a coordinate to the correct size for the screen"""
-        return int((original_dimension / design_size) * production_size)
+        return (original_dimension / design_size) * production_size
 
     if relative_width > relative_height:
         # The screen is slightly wider than wanted, so the top and bottom edges
         # will be unused
         x = lambda num: coord(num, original_width,
-                              int((height / original_height) * original_width))
+                              (height / original_height) * original_width)
         y = lambda num: coord(num, original_height, height)
     elif relative_height > relative_width:
         # The screen is slightly taller than wanted, so the left and right
         # edges will be unused
         x = lambda num: coord(num, original_width, width)
         y = lambda num: coord(num, original_height,
-                              int((width / original_width) * original_height))
+                              (width / original_width) * original_height)
     else:
         # The screen is exactly 16:9, so all edges will be exactly 16:9
         x = lambda num: coord(num, original_width, width)
