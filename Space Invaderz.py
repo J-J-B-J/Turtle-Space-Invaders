@@ -72,6 +72,7 @@ def run():
                     self.turtle.hideturtle()
 
     bullets = []
+    score = 0
 
     class Player:
         """A class to manage the player"""
@@ -160,12 +161,14 @@ def run():
 
         def generate_bullet(self):
             """Fire a bullet"""
+            nonlocal score
             if self.firing and self.time_last_bullet < time.time() - 0.5:
                 bullets.append(Bullet(
                     self.turtle.xcor(),
                     self.turtle.ycor() + y(80),
                 ))
                 self.time_last_bullet = time.time()
+                score -= 1
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the player intersects a point"""
@@ -189,7 +192,7 @@ def run():
     class Alien:
         """A class to manage an Alien ship"""
 
-        def __init__(self, x_pos, y_pos):
+        def __init__(self, x_pos, y_pos, level):
             self.turtle = t.Turtle()
             self.turtle.penup()
             self.turtle.goto(x_pos, y_pos)
@@ -197,6 +200,7 @@ def run():
             self.turtle.shape("assets/img/alien.gif")
             self.turtle.fillcolor((255, 255, 255))
             self.time_last_bullet = time.time() - 60
+            self.level = level
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the alien intersects a point"""
@@ -219,10 +223,25 @@ def run():
                     ))
                     self.time_last_bullet = time.time()
 
+    score_turtle = t.Turtle()
+    score_turtle.hideturtle()
+    score_turtle.penup()
+    score_turtle.goto(pos(0, 350))
+    score_turtle.color(255, 255, 255)
+
+    def draw_score():
+        """Draw the score at the top of the screen."""
+        score_turtle.clear()
+        score_turtle.write(
+            str(score),
+            align="center",
+            font=("Helvetica", int(y(50)), "normal")
+        )
+
     player = Player(y(-350))
 
-    aliens = [Alien(x(x_pos), y(y_pos)) for x_pos in range(-550, 551, 110)
-              for y_pos in range(100, 401, 75)]
+    aliens = [Alien(x(x_pos), y(y_pos), 1) for x_pos in range(-550, 551, 110)
+              for y_pos in range(0, 301, 75)]
 
     def end_screen(win: bool):
         """Show the end screen"""
@@ -236,13 +255,13 @@ def run():
         end_turtle.color(1, 1, 1)
         if win:
             end_turtle.write(
-                "You Win!",
+                "Triumph!",
                 align="center",
                 font=("Helvetica", int(y(50)), "normal")
             )
         else:
             end_turtle.write(
-                "You Lose!",
+                "Defeat!",
                 align="center",
                 font=("Helvetica", int(y(50)), "normal")
             )
@@ -300,6 +319,7 @@ def run():
         return
 
     last_frame_time = time.time_ns() / 1_000_000 - 10
+    last_score_decrease = time.time()
 
     alien_direction = 1
 
@@ -308,14 +328,13 @@ def run():
         return x(0.2 + (0.2 * (55 - len(aliens))))
 
     while True:
-        if not aliens:
-            print("You WIN!")
-            end_screen(True)
-            return
-
         current_time = time.time_ns() / 1_000_000
         time_diff = current_time - last_frame_time
         for _ in range(int(time_diff / 10)):
+            if not aliens:
+                end_screen(True)
+                return
+
             player.move()
 
             alien_xs = [alien.turtle.xcor() for alien in aliens]
@@ -327,7 +346,6 @@ def run():
 
             if min_alien_y < y(-240) or (not player.turtle.isvisible()):
                 # Aliens have caught up, game ends
-                print("Game Over!")
                 end_screen(False)
                 return
 
@@ -365,6 +383,7 @@ def run():
                         alien.generate_bullet(len(aliens))
                 else:
                     aliens_to_delete.append(alien)
+                    score += 10 * alien.level
             for alien in aliens_to_delete:
                 aliens.remove(alien)
                 del alien
@@ -379,7 +398,12 @@ def run():
                 bullets.remove(bullet)
                 del bullet
 
+        if int(time.time()-last_score_decrease) >= 1:
+            score -= int(time.time() - last_score_decrease)
+            last_score_decrease = time.time()
+
         last_frame_time = time.time_ns() / 1_000_000
+        draw_score()
         screen.update()
 
 
