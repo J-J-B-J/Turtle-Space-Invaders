@@ -1,9 +1,14 @@
 """A game of space invaderz"""
+import json
 import time
 import turtle as t
 from util import *
 from importlib import reload
 from random import randint, choice
+from tkinter.messagebox import showwarning, showerror, askyesno
+from tkinter import *
+from json import load, dump, JSONDecodeError
+from hashlib import sha256
 
 
 def run():
@@ -72,12 +77,283 @@ def run():
                     self.turtle.hideturtle()
 
     bullets = []
-    score = 0
+
+    # class HighScore
 
     class Player:
+        """A class to hold a player"""
+        def __init__(self, name: str, password_en: bool, password_hash=None,
+                     highscores: list[int] = []):
+            self.name = name
+            self.password_en = password_en
+            self.password_hash = password_hash
+            self.highscores = highscores
+
+        def serialise(self):
+            """Convert to a dictionary"""
+            return {
+                "name": self.name,
+                "password_en": self.password_en,
+                "password_hash": self.password_hash,
+                "highscores": self.highscores
+            }
+
+    def playerfromdict(player_dict: dict):
+        """Create a player from a dictionary"""
+        try:
+            return Player(
+                name=player_dict["name"],
+                password_en=player_dict["password_en"],
+                password_hash=player_dict["password_hash"]
+            )
+        except KeyError:
+            return None
+        except ValeError:
+            return None
+
+    class Scorer:
+        """A class to manage scoring"""
+        def __init__(self, file_name):
+            self.score = 0
+            self.turtle = t.Turtle()
+            self.turtle.hideturtle()
+            self.turtle.penup()
+            self.turtle.goto(pos(0, 350))
+            self.turtle.color(255, 255, 255)
+            self.file_name = file_name
+
+            self.players = []
+            self.load()
+            self.player = None
+            self.login()
+
+            self.last_score_decrease = time.time()
+
+        def login(self):
+            """Login a player"""
+            login_window = Tk()
+            login_window.title("Login")
+            login_window.geometry("200x200")
+
+            logged_in = False
+
+            # This section is largely based on and partly copied from my
+            # fuzzy-parakeet repository, which is publicly available on GitHub.
+            # https://github.com/J-J-B-J/fuzzy-parakeet/blob/b741830bbbb0acfa502ef0d6d87d1dcf1e9907dd/FuzzyParakeet.py#L42
+            # I have not submitted this code in any other assessment task.
+            player_label = Label(master=login_window, text="Username:")
+            player_label.pack()
+            player_list = Listbox(master=login_window, width=1)
+            player_list.pack(side=TOP, fill=BOTH, expand=True)
+            scrollbar = Scrollbar(master=player_list)
+            scrollbar.pack(side=RIGHT, fill=BOTH)
+            player_list.config(yscrollcommand=scrollbar.set)
+            scrollbar.config(command=player_list.yview)
+
+            for this_player in self.players:
+                player_list.insert(END, this_player.name)
+
+            def add_player():
+                """Create a new player"""
+                new_player_window = Tk()
+                new_player_window.title("New Player")
+                new_player_window.geometry("260x200")
+                new_playername_label = Label(
+                    master=new_player_window,
+                    text="Username:"
+                )
+                new_playername_label.pack()
+                new_playername_var = StringVar(master=new_player_window)
+                new_playername_input = Entry(
+                    master=new_player_window,
+                    textvariable=new_playername_var
+                )
+                new_playername_input.pack()
+
+                new_password_en_var = IntVar(master=new_player_window, value=1)
+                new_password_en_check = Checkbutton(
+                    master=new_player_window,
+                    text="Password-Protected",
+                    variable=new_password_en_var
+                )
+                new_password_en_check.pack()
+                new_password_label = Label(
+                    master=new_player_window,
+                    text="Password:"
+                )
+                new_password_label.pack()
+                new_password_var = StringVar(master=new_player_window)
+                new_password_input = Entry(
+                    master=new_player_window,
+                    textvariable=new_password_var
+                )
+                new_password_input.pack()
+
+                def password_en_change(*_):
+                    """Function to be called when password_en changes"""
+                    if new_password_en_var.get():
+                        new_password_input.config(state="normal")
+                        new_password_label.config(state="normal")
+                    else:
+                        new_password_input.config(state="disabled")
+                        new_password_label.config(state="disabled")
+                        new_password_var.set("")
+
+                new_password_en_var.trace_add("write", password_en_change)
+
+                def submit():
+                    """Submit the form"""
+                    new_playername = new_playername_var.get()
+                    password_en = True if new_password_en_var.get() else False
+                    if password_en:
+                        password_hash = sha256(
+                            new_password_input.get().encode()
+                        ).hexdigest()
+                    else:
+                        password_hash = None
+                    self.players.append(Player(
+                        new_playername,
+                        password_en,
+                        password_hash
+                    ))
+                    new_player_window.destroy()
+                    player_list.insert(END, new_playername)
+                    self.save()
+
+                submit_button = Button(master=new_player_window, text="Create",
+                                       command=submit)
+                submit_button.pack()
+
+                def validate_playername(*_):
+                    """Validate the playername"""
+                    if new_playername_var.get() in [player.name for
+                                                  player in self.players]:
+                        submit_button.config(state="disabled", command="")
+                        new_playername_label.config(foreground="red")
+                    else:
+                        submit_button.config(state="normal", command=submit)
+                        new_playername_label.config(foreground="black")
+
+                new_playername_var.trace_add("write", validate_playername)
+
+                while new_player_window:
+                    new_player_window.update()
+
+            def login():
+                """Login a player"""
+                nonlocal logged_in
+                logging_in_player = self.players[player_list.curselection()[0]]
+                if not player_list.curselection():
+                    showerror(message="Login Failed")
+                    return
+                if sha256(password_var.get().encode()).hexdigest() == \
+                        logging_in_player.password_hash or not \
+                        logging_in_player.password_en:
+                    logged_in = True
+                else:
+                    showerror(message="Login failed!")
+
+            password_label = Label(
+                master=login_window,
+                text="Password:"
+            )
+            password_label.pack()
+            password_var = StringVar(master=login_window)
+            password_input = Entry(
+                master=login_window,
+                textvariable=password_var
+            )
+            password_input.pack()
+
+            frm_buttons = Frame(master=login_window)
+            frm_buttons.pack()
+            btn_new = Button(
+                master=frm_buttons,
+                text="New Player...",
+                command=add_player
+            )
+            btn_new.pack(side=LEFT)
+            btn_login = Button(
+                master=frm_buttons,
+                text="Login",
+                command=login
+            )
+            btn_login.pack(side=RIGHT)
+
+            while not logged_in:
+                login_window.update()
+            login_window.destroy()
+
+        def serialise_players(self):
+            """Serialise the players into json format."""
+            return [this_player.serialise() for this_player in self.players]
+
+        def load(self):
+            """Load the scores from a file"""
+            try:
+                with open(self.file_name, "r") as scores_file:
+                    players_data = load(scores_file)
+                if type(players_data) != list:
+                    raise TypeError
+            except FileNotFoundError:
+                showwarning(message="Unable to find high scores!\n"
+                                    "Creating file...")
+                self.save()
+            except EOFError:
+                showwarning(message="Unable to retrieve high scores!\n"
+                                    "Resetting file...")
+                self.save()
+            except JSONDecodeError:
+                showwarning(message="Unable to parse high scores!\n"
+                                    "Resetting file...")
+                self.save()
+            except TypeError:
+                showwarning(message="Unable to parse high scores!\n"
+                                    "Resetting file...")
+                self.save()
+            else:
+                for player_data in players_data:
+                    player_obj = playerfromdict(player_data)
+                    if player_obj is not None:
+                        self.players.append(player_obj)
+
+        def save(self):
+            """Save the scores to a file"""
+            try:
+                with open(self.file_name, "w") as scores_file:
+                    dump(self.serialise_players(), scores_file)
+            except FileNotFoundError:
+                showerror(message="Unable to save high scores!")
+
+        def increase(self, amount: int):
+            """Increase the score by an amount"""
+            self.score += amount
+
+        def decrease(self, amount: int):
+            """Decrease the score by an amount"""
+            self.score -= amount
+
+        def draw_score(self):
+            """Draw the score at the top of the screen."""
+            # Update the score for the number of seconds
+            if int(time.time() - self.last_score_decrease) >= 1:
+                self.decrease(int(time.time() - self.last_score_decrease))
+                self.last_score_decrease = time.time()
+
+            # Draw the score
+            self.turtle.clear()
+            self.turtle.write(
+                str(self.score),
+                align="center",
+                font=("Helvetica", int(y(50)), "normal")
+            )
+
+    scorer = Scorer("assets/scores/scores.json")
+
+    class Ship:
         """A class to manage the player"""
 
-        def __init__(self, y_pos, speed=10):
+        def __init__(self, y_pos, speed=8):
             self.speed = speed
             self.movement = 0
             self.turtle = t.Turtle()
@@ -161,14 +437,14 @@ def run():
 
         def generate_bullet(self):
             """Fire a bullet"""
-            nonlocal score
+            nonlocal scorer
             if self.firing and self.time_last_bullet < time.time() - 0.5:
                 bullets.append(Bullet(
                     self.turtle.xcor(),
                     self.turtle.ycor() + y(80),
                 ))
                 self.time_last_bullet = time.time()
-                score -= 1
+                scorer.decrease(1)
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the player intersects a point"""
@@ -213,32 +489,17 @@ def run():
 
         def generate_bullet(self, alien_count):
             """Fire a bullet"""
-            if randint(0, 1500 - (10 * (55 - alien_count))) == 0:
+            if randint(0, 1500 - (27 * (55 - alien_count))) == 0:
                 if self.time_last_bullet < time.time() - 2:
                     bullets.append(Bullet(
                         self.turtle.xcor(),
                         self.turtle.ycor(),
-                        y(-5),
+                        y(-4),
                         fired_by_player=False
                     ))
                     self.time_last_bullet = time.time()
 
-    score_turtle = t.Turtle()
-    score_turtle.hideturtle()
-    score_turtle.penup()
-    score_turtle.goto(pos(0, 350))
-    score_turtle.color(255, 255, 255)
-
-    def draw_score():
-        """Draw the score at the top of the screen."""
-        score_turtle.clear()
-        score_turtle.write(
-            str(score),
-            align="center",
-            font=("Helvetica", int(y(50)), "normal")
-        )
-
-    player = Player(y(-350))
+    player = Ship(y(-350))
 
     aliens = [Alien(x(x_pos), y(y_pos), 1) for x_pos in range(-550, 551, 110)
               for y_pos in range(0, 301, 75)]
@@ -274,8 +535,7 @@ def run():
                     "You sent the Romulans back in time with red matter!",
                     "Looks like you've won! Go drink a hot chocolate and watch"
                     " some TV or something.",
-                    "Reward yourself with a 3D printed Blue or Gold duck from"
-                    " Ethan Phillips for only 50¢!",
+                    "Reward yourself with a 3D printed duck!",
                     "Tip: For a challenge, try destroying the aliens in the"
                     " middle first to speed them up.",
                 ]),
@@ -316,16 +576,17 @@ def run():
         while not done:
             screen.update()
 
+        scorer.save()
+
         return
 
     last_frame_time = time.time_ns() / 1_000_000 - 10
-    last_score_decrease = time.time()
 
     alien_direction = 1
 
     def alien_speed():
         """Get the alien speed"""
-        return x(0.2 + (0.2 * (55 - len(aliens))))
+        return x(0.175 + (0.175 * (55 - len(aliens))))
 
     while True:
         current_time = time.time_ns() / 1_000_000
@@ -383,7 +644,7 @@ def run():
                         alien.generate_bullet(len(aliens))
                 else:
                     aliens_to_delete.append(alien)
-                    score += 10 * alien.level
+                    scorer.increase(10 * alien.level)
             for alien in aliens_to_delete:
                 aliens.remove(alien)
                 del alien
@@ -398,12 +659,8 @@ def run():
                 bullets.remove(bullet)
                 del bullet
 
-        if int(time.time()-last_score_decrease) >= 1:
-            score -= int(time.time() - last_score_decrease)
-            last_score_decrease = time.time()
-
         last_frame_time = time.time_ns() / 1_000_000
-        draw_score()
+        scorer.draw_score()
         screen.update()
 
 
