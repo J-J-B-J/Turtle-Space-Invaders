@@ -242,16 +242,30 @@ def run():
             def login():
                 """Login a player"""
                 nonlocal logged_in
-                logging_in_player = self.players[player_list.curselection()[0]]
                 if not player_list.curselection():
                     showerror(message="Login Failed")
                     return
+                logging_in_player = self.players[player_list.curselection()[0]]
                 if sha256(password_var.get().encode()).hexdigest() == \
                         logging_in_player.password_hash or not \
                         logging_in_player.password_en:
+                    self.player = logging_in_player
                     logged_in = True
                 else:
                     showerror(message="Login failed!")
+
+            def guest_login():
+                """Login as a guest"""
+                nonlocal logged_in
+                use_guest = askyesno(
+                    message="Using a guest account will not save your scores."
+                            "\nDo you want to continue as a guest?"
+                )
+                if use_guest:
+                    self.player = "guest"
+                    logged_in = True
+                else:
+                    return
 
             password_label = Label(
                 master=login_window,
@@ -265,20 +279,28 @@ def run():
             )
             password_input.pack()
 
+            btn_login = Button(
+                master=login_window,
+                text="Login",
+                command=login
+            )
+            btn_login.pack()
+
             frm_buttons = Frame(master=login_window)
             frm_buttons.pack()
+            btn_guest = Button(
+                master=frm_buttons,
+                text="Guest",
+                command=guest_login
+            )
+            btn_guest.pack(side=LEFT)
             btn_new = Button(
                 master=frm_buttons,
                 text="New Player...",
                 command=add_player
             )
-            btn_new.pack(side=LEFT)
-            btn_login = Button(
-                master=frm_buttons,
-                text="Login",
-                command=login
-            )
-            btn_login.pack(side=RIGHT)
+            btn_new.pack(side=RIGHT)
+            # TODO: Add Remove Player button
 
             while not logged_in:
                 login_window.update()
