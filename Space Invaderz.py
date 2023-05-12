@@ -157,7 +157,7 @@ def run():
                 """Create a new player"""
                 new_player_window = Tk()
                 new_player_window.title("New Player")
-                new_player_window.geometry("260x200")
+                new_player_window.geometry("205x210")
                 new_playername_label = Label(
                     master=new_player_window,
                     text="Username:"
@@ -170,6 +170,7 @@ def run():
                 )
                 new_playername_input.pack()
 
+                # Password Checkbox
                 new_password_en_var = IntVar(master=new_player_window, value=1)
                 new_password_en_check = Checkbutton(
                     master=new_player_window,
@@ -177,6 +178,8 @@ def run():
                     variable=new_password_en_var
                 )
                 new_password_en_check.pack()
+
+                # Password Entry
                 new_password_label = Label(
                     master=new_player_window,
                     text="Password:"
@@ -185,25 +188,62 @@ def run():
                 new_password_var = StringVar(master=new_player_window)
                 new_password_input = Entry(
                     master=new_player_window,
-                    textvariable=new_password_var
+                    textvariable=new_password_var,
+                    show="✱"
                 )
                 new_password_input.pack()
+
+                # Password Verification
+                new_password_verif_label = Label(
+                    master=new_player_window,
+                    text="Password again:"
+                )
+                new_password_verif_label.pack()
+                new_password_verif_var = StringVar(master=new_player_window)
+                new_password_verif_input = Entry(
+                    master=new_player_window,
+                    textvariable=new_password_verif_var,
+                    show="✱"
+                )
+                new_password_verif_input.pack()
 
                 def password_en_change(*_):
                     """Function to be called when password_en changes"""
                     if new_password_en_var.get():
                         new_password_input.config(state="normal")
                         new_password_label.config(state="normal")
+                        new_password_verif_input.config(state="normal")
+                        new_password_verif_label.config(state="normal")
                     else:
                         new_password_input.config(state="disabled")
                         new_password_label.config(state="disabled")
+                        new_password_verif_input.config(state="disabled")
+                        new_password_verif_label.config(state="disabled")
                         new_password_var.set("")
+                        new_password_verif_var.set("")
 
                 new_password_en_var.trace_add("write", password_en_change)
 
                 def submit():
                     """Submit the form"""
-                    new_playername = new_playername_var.get()
+                    new_playername = new_playername_var.get().strip()
+                    new_password = new_password_var.get()
+                    new_password_verif = new_password_verif_var.get()
+                    if new_password != new_password_verif:
+                        showerror(message="Passwords do not match!")
+                        return
+                    if new_playername == "":
+                        showerror(message="Please enter a player name with at "
+                                          "least one visible character.")
+                        return
+                    if new_playername in [p.name for p in self.players]:
+                        showerror(message="That username is already in use!")
+                        return
+                    if new_password.strip() == "":
+                        showerror(message="Please enter a password with at "
+                                          "least one visible character.")
+                        return
+
                     password_en = True if new_password_en_var.get() else False
                     if password_en:
                         password_hash = sha256(
@@ -223,18 +263,6 @@ def run():
                 submit_button = Button(master=new_player_window, text="Create",
                                        command=submit)
                 submit_button.pack()
-
-                def validate_playername(*_):
-                    """Validate the playername"""
-                    if new_playername_var.get() in [player.name for
-                                                  player in self.players]:
-                        submit_button.config(state="disabled", command="")
-                        new_playername_label.config(foreground="red")
-                    else:
-                        submit_button.config(state="normal", command=submit)
-                        new_playername_label.config(foreground="black")
-
-                new_playername_var.trace_add("write", validate_playername)
 
                 while new_player_window:
                     new_player_window.update()
@@ -275,7 +303,8 @@ def run():
             password_var = StringVar(master=login_window)
             password_input = Entry(
                 master=login_window,
-                textvariable=password_var
+                textvariable=password_var,
+                show="✱"
             )
             password_input.pack()
 
@@ -511,7 +540,7 @@ def run():
 
         def generate_bullet(self, alien_count):
             """Fire a bullet"""
-            if randint(0, 1500 - (27 * (55 - alien_count))) == 0:
+            if randint(0, 1500 - (24 * (55 - alien_count))) == 0:
                 if self.time_last_bullet < time.time() - 2:
                     bullets.append(Bullet(
                         self.turtle.xcor(),
