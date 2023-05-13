@@ -36,7 +36,7 @@ def run():
     class Bullet:
         """A class to manage a bullet"""
 
-        def __init__(self, x_pos, y_pos, speed=15, length=1, width=0.4,
+        def __init__(self, x_pos, y_pos, speed=y(10), length=1, width=0.4,
                      fired_by_player=True):
             self.speed = speed
             self.turtle = t.Turtle()
@@ -133,7 +133,7 @@ def run():
             """Login a player"""
             login_window = Tk()
             login_window.title("Login")
-            login_window.geometry("200x200")
+            login_window.geometry("200x300")
 
             logged_in = False
 
@@ -267,20 +267,31 @@ def run():
                 while new_player_window:
                     new_player_window.update()
 
+            def check_login(password: str) -> (bool, str or Player):
+                """Check if credentials are correct"""
+                if not player_list.curselection():
+                    return False, "noSelect"
+                logging_in_player = self.players[player_list.curselection()[0]]
+                if sha256(password.encode()).hexdigest() == \
+                        logging_in_player.password_hash or not \
+                        logging_in_player.password_en:
+                    return True, logging_in_player
+                else:
+                    return False, "wrongPassword"
+
             def login():
                 """Login a player"""
                 nonlocal logged_in
-                if not player_list.curselection():
-                    showerror(message="Login Failed")
-                    return
-                logging_in_player = self.players[player_list.curselection()[0]]
-                if sha256(password_var.get().encode()).hexdigest() == \
-                        logging_in_player.password_hash or not \
-                        logging_in_player.password_en:
-                    self.player = logging_in_player
+                success, result = check_login(password_var.get())
+                if success:
+                    self.player = result
                     logged_in = True
+                elif result == "noSelect":
+                    showerror(message="Please select a username!")
+                    return
                 else:
-                    showerror(message="Login failed!")
+                    showerror(message="Incorrect username or password!")
+                    return
 
             def guest_login():
                 """Login as a guest"""
@@ -293,6 +304,24 @@ def run():
                     self.player = "guest"
                     logged_in = True
                 else:
+                    return
+
+            def delete_player():
+                """Delete the selected account"""
+                success, result = check_login(password_var.get())
+                if success:
+                    delete = askyesno(message=f"Are you sure you want to "
+                                              f"delete '{result.name}'?")
+                    if delete:
+                        player_list.delete(self.players.index(result))
+                        password_var.set("")
+                        self.players.remove(result)
+                        self.save()
+                elif result == "noSelect":
+                    showerror(message="Please select a username!")
+                    return
+                else:
+                    showerror(message="Incorrect username or password!")
                     return
 
             password_label = Label(
@@ -308,28 +337,33 @@ def run():
             )
             password_input.pack()
 
+            frm_buttons_ = Frame(master=login_window)
+            frm_buttons_.pack()
             btn_login = Button(
-                master=login_window,
+                master=frm_buttons_,
                 text="Login",
                 command=login
             )
-            btn_login.pack()
-
-            frm_buttons = Frame(master=login_window)
-            frm_buttons.pack()
+            btn_login.pack(side=LEFT)
             btn_guest = Button(
-                master=frm_buttons,
+                master=frm_buttons_,
                 text="Guest",
                 command=guest_login
             )
-            btn_guest.pack(side=LEFT)
+            btn_guest.pack(side=RIGHT)
+
             btn_new = Button(
-                master=frm_buttons,
+                master=login_window,
                 text="New Player...",
                 command=add_player
             )
-            btn_new.pack(side=RIGHT)
-            # TODO: Add Remove Player button
+            btn_new.pack()
+            btn_del = Button(
+                master=login_window,
+                text="Delete Player...",
+                command=delete_player
+            )
+            btn_del.pack()
 
             while not logged_in:
                 login_window.update()
