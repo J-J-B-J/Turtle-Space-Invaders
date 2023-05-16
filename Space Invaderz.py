@@ -31,7 +31,7 @@ def run():
     # Create the coordinate optimisation functions
     x, y, pos = optimised_coord_funcs(
         screen.window_width(), screen.window_height(),
-        1300, 900
+        1420, 900
     )
 
     # Draw a border on the screen
@@ -39,7 +39,7 @@ def run():
     border_turtle.penup()
     border_turtle.hideturtle()
     border_turtle.pencolor(255, 255, 255)
-    border_turtle.width(5)
+    border_turtle.pensize(5)
     # Draw the border
     border_turtle.goto(pos(-710, -450))
     border_turtle.pendown()
@@ -63,7 +63,7 @@ def run():
             if fired_by_player:
                 self.turtle.fillcolor(230, 84, 45)
             else:
-                self.turtle.fillcolor(53, 88, 164)
+                self.turtle.fillcolor(9, 158, 29)
             self.turtle.shapesize(length, width, 0)
             # Was this bullet fired by the player or an alien?
             self.fired_by_player = fired_by_player
@@ -104,7 +104,7 @@ def run():
                         self.turtle.ycor()
                 ):
                     # Destroy the player and the bullet
-                    player.turtle.hideturtle()
+                    player.dead()
                     self.turtle.hideturtle()
 
     # Create a list to store the bullets
@@ -568,20 +568,130 @@ def run():
     scorer = Scorer("assets/scores/scores.json")
 
     class Ship:
-        """A class to manage the player"""
+        """A class to manage the ship"""
         def __init__(self, y_pos, speed=8):
             self.speed = speed
             self.movement = 0  # 1 or -1, to represent forwards or backwards
             self.turtle = t.Turtle()  # Create a turtle
-            # Set the image of the turtle and make it look right
+            # Make the turtle look right
+            self.turtle.hideturtle()
             self.turtle.penup()
             self.turtle.goto(0, y_pos)
-            t.register_shape("assets/img/ship.gif")
-            self.turtle.shape("assets/img/ship.gif")
             self.activate_controls()  # Activate the controls
             self.firing = False  # Not firing right now
             # Save the time since the last bullet
             self.time_last_bullet = time.time() - 60
+
+            self.alive = True  # The player is alive to start
+
+        def draw(self):
+            """Draw myself to the screen"""
+            self.turtle.clear()  # Clear the previous drawing
+            # Get the initial x and y coordinates
+            initial_x, initial_y = self.turtle.xcor(), self.turtle.ycor()
+
+            # Draw the main compartment
+            self.turtle.fillcolor(230, 230, 230)
+            self.turtle.goto(initial_x - x(25), initial_y - y(55))
+            self.turtle.begin_fill()
+            for point in [(-25, 45), (25, 45), (25, -55)]:
+                self.turtle.goto(
+                    initial_x + x(point[0]),
+                    initial_y + y(point[1])
+                )
+            self.turtle.end_fill()
+
+            # Draw the nose cone
+            self.turtle.fillcolor(255, 82, 13)
+            self.turtle.goto(initial_x - x(25), initial_y + y(45))
+            self.turtle.begin_fill()
+            for point in [(0, 100), (25, 45)]:
+                self.turtle.goto(
+                    initial_x + x(point[0]),
+                    initial_y + y(point[1])
+                )
+            self.turtle.end_fill()
+
+            # Draw the window
+            self.turtle.pencolor(255, 82, 13)
+            self.turtle.fillcolor(213, 245, 243)
+            self.turtle.pensize(5)
+            self.turtle.goto(initial_x, initial_y + y(35))
+            self.turtle.setheading(0)
+            self.turtle.pendown()
+            self.turtle.begin_fill()
+            self.turtle.circle(x(-15))
+            self.turtle.penup()
+            self.turtle.end_fill()
+
+            # Draw the side fins
+            self.turtle.fillcolor(230, 230, 230)
+            for side in [-1, 1]:
+                self.turtle.goto(initial_x, initial_y - y(55))
+                self.turtle.begin_fill()
+                self.turtle.goto(initial_x + x(45 * side), initial_y - y(55))
+                self.turtle.setheading(90)
+                self.turtle.circle(x(45 * side), 56.33)
+                self.turtle.end_fill()
+
+            # Draw the bottom section and the middle fin
+            self.turtle.fillcolor(255, 82, 13)
+            for side in [-1, 1]:
+                self.turtle.goto(initial_x + x(25 * side),
+                                 initial_y - y(55))
+                self.turtle.begin_fill()
+                for point in [(1, -55), (1, -20), (25, -20)]:
+                    self.turtle.goto(
+                        initial_x + x(point[0] * side),
+                        initial_y + y(point[1])
+                    )
+                self.turtle.end_fill()
+
+            # Draw the exhaust part 1
+            self.turtle.fillcolor(0, 53, 227)
+            self.turtle.goto(initial_x + x(21), initial_y - y(55))
+            self.turtle.begin_fill()
+            for point in [(-21, -55), (-21, -58), (21, -58)]:
+                self.turtle.goto(
+                    initial_x + x(point[0]),
+                    initial_y + y(point[1])
+                )
+            self.turtle.end_fill()
+            # Draw the exhaust part 2
+            self.turtle.fillcolor(0, 179, 255)
+            self.turtle.goto(initial_x + x(17), initial_y - y(58))
+            self.turtle.begin_fill()
+            for point in [(-17, -58), (-17, -62), (17, -62)]:
+                self.turtle.goto(
+                    initial_x + x(point[0]),
+                    initial_y + y(point[1])
+                )
+            self.turtle.end_fill()
+
+            # Draw the flames
+            for flame_no in range(3):
+                self.turtle.fillcolor(
+                    237 + (6 * flame_no),
+                    160 + (31 * flame_no),
+                    26 + (76 * flame_no)
+                )
+                self.turtle.goto(
+                    initial_x + x(17 - (4 * flame_no)),
+                    initial_y - y(62)
+                )
+                self.turtle.begin_fill()
+                self.turtle.goto(
+                    initial_x,
+                    initial_y - y(90 - (10 * flame_no))
+                )
+                self.turtle.goto(
+                    initial_x - x(17 - (4 * flame_no)),
+                    initial_y - y(62)
+                )
+                self.turtle.end_fill()
+
+            # Go back to the starting position
+            self.turtle.goto(initial_x, initial_y)
 
         def move(self):
             """Move"""
@@ -684,23 +794,31 @@ def run():
             tx = self.turtle.xcor()
             ty = self.turtle.ycor()
             # If x_pos and y_pos intersect the fins of the ship
-            if tx - 50 <= x_pos <= tx + 50 and ty - 35 <= y_pos <= ty - 15:
+            if tx - x(40) <= x_pos <= tx + x(40) and \
+                    ty - y(55) <= y_pos <= ty - y(30):
                 # Destroy the ship and return a hit
-                self.turtle.hideturtle()
+                self.dead()
                 return True
             # If x_pos and y_pos intersect the passenger section of the ship
-            if tx - 28 <= x_pos <= tx + 28 and ty - 15 <= y_pos <= ty + 60:
+            if tx - x(25) <= x_pos <= tx + x(25) and \
+                    ty - y(55) <= y_pos <= ty + y(45):
                 # Destroy the ship and return a hit
-                self.turtle.hideturtle()
+                self.dead()
                 return True
             # If x_pos and y_pos intersect the nose of the ship
-            if 2 * (x_pos - tx) + (y_pos - ty) < 105 and -2 * (x_pos - tx) + (
-                    y_pos - ty) < 105 and y_pos - ty > 50:
+            if (y_pos - ty) < -2.2 * (x_pos - tx) + x(100) and \
+                    (y_pos - ty) < 2.2 * (x_pos - tx) + x(100) and \
+                    y_pos - ty > y(45):
                 # Destroy the ship and return a hit
-                self.turtle.hideturtle()
+                self.dead()
                 return True
             # Return a no-hit
             return False
+
+        def dead(self):
+            """The player is dead"""
+            self.alive = False  # The player is dead
+            self.turtle.clear()  # Remove the player drawing from the screen
 
     class Alien:
         """A class to manage an Alien ship"""
@@ -723,7 +841,7 @@ def run():
             initial_x, initial_y = self.turtle.xcor(), self.turtle.ycor()
 
             # Set the fill colour and start filling
-            self.turtle.fillcolor(181, 182, 184)
+            self.turtle.fillcolor(159, 170, 181)
             self.turtle.goto(initial_x-x(40), initial_y-y(8))
             self.turtle.begin_fill()
             # The following was created with help from:
@@ -736,7 +854,7 @@ def run():
             self.turtle.end_fill()
 
             # Set the fill colour and start filling
-            self.turtle.fillcolor(62, 98, 170)
+            self.turtle.fillcolor(9, 158, 29)
             self.turtle.goto(initial_x-x(24), initial_y)
             self.turtle.begin_fill()
             # Draw the Capsule of the alien
@@ -903,6 +1021,8 @@ def run():
 
             # Move the player
             player.move()
+            # Draw the player
+            player.draw()
 
             # Get the alien x-coordinates, minimum x-coordinates, maximum
             # x-coordinates, y-coordinates and minimum y-coordinates
@@ -914,7 +1034,7 @@ def run():
 
             # If the aliens are too close to the player, or if the player is
             # dead
-            if min_alien_y < y(-240) or (not player.turtle.isvisible()):
+            if min_alien_y < y(-180) or (not player.alive):
                 # End the game with the player losing
                 end_screen(False)
                 return
