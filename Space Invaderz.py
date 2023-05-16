@@ -35,8 +35,8 @@ def run():
     class Bullet:
         """A class to manage a bullet"""
 
-        def __init__(self, x_pos, y_pos, speed=y(10), length=1, width=0.4,
-                     fired_by_player=True):
+        def __init__(self, x_pos, y_pos, speed=y(10), length=y(1),
+                     width=x(0.4), fired_by_player=True):
             self.speed = speed
             self.turtle = t.Turtle()  # Create a turtle to act as the bullet
             # Move the turtle to the right position and make it look right
@@ -77,7 +77,7 @@ def run():
                     ):
                         # If it has, destroy the alien and the bullet, then
                         # exit this function
-                        alien.turtle.hideturtle()
+                        alien.dead()
                         self.turtle.hideturtle()
                         break
             else:  # If the bullet was fired by an alien
@@ -333,8 +333,8 @@ def run():
                                        command=submit)
                 submit_button.pack()
 
-                # While the new player window is not destroyed
-                while new_player_window:
+                # While the new player window is in focus
+                while new_player_window.focus_displayof():
                     # Update the window
                     new_player_window.update()
 
@@ -691,20 +691,53 @@ def run():
             self.turtle = t.Turtle()  # Create a turtle for the alien
             # Make the turtle look right
             self.turtle.penup()
+            self.turtle.hideturtle()
             self.turtle.goto(x_pos, y_pos)
-            t.register_shape("assets/img/alien.gif")
-            self.turtle.shape("assets/img/alien.gif")
-            self.turtle.fillcolor((255, 255, 255))
             # Set the last time a bullet was fired to a minute ago
             self.time_last_bullet = time.time() - 60
             self.level = level  # Set the level of the alien
 
+            self.alive = True  # The alien is alive to start
+
+        def draw(self):
+            """Draw myself to the screen"""
+            self.turtle.clear()  # Clear the previous drawing
+            # Get the initial x and y coordinates
+            initial_x, initial_y = self.turtle.xcor(), self.turtle.ycor()
+
+            # Set the fill colour and start filling
+            self.turtle.fillcolor(181, 182, 184)
+            self.turtle.goto(initial_x-x(40), initial_y-y(8))
+            self.turtle.begin_fill()
+            # The following was created with help from:
+            # https://www.geeksforgeeks.org/draw-ellipse-using-turtle-in-python
+            # Draw the body of the alien
+            self.turtle.seth(135)
+            for _ in range(2):
+                self.turtle.circle(x(-60), -90, 5)
+                self.turtle.circle(x(-(60 // 20)), -90, 5)
+            self.turtle.end_fill()
+
+            # Set the fill colour and start filling
+            self.turtle.fillcolor(62, 98, 170)
+            self.turtle.goto(initial_x-x(24), initial_y)
+            self.turtle.begin_fill()
+            # Draw the Capsule of the alien
+            self.turtle.seth(270)
+            self.turtle.circle(x(26.25), -180, 5)
+            self.turtle.circle(x(26.25 // 20), -180, 5)
+            self.turtle.end_fill()
+
+            # Go back to the starting position
+            self.turtle.goto(initial_x, initial_y)
+
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the alien intersects a point"""
             # If the point is in the rectangular hitbox
-            if self.turtle.xcor() - 50 <= x_pos <= self.turtle.xcor() + 50 \
-                    and self.turtle.ycor() - 27 <= y_pos <= self.turtle.ycor():
-                self.turtle.hideturtle()  # Destroy the alien
+            if self.turtle.xcor() - x(50) <= x_pos <= self.turtle.xcor() + \
+                    x(50) and \
+                    self.turtle.ycor() - y(27) <= y_pos <= self.turtle.ycor():
+                self.dead()  # Destroy the alien
                 return True  # Return a hit
             else:
                 return False  # Return a no-hit
@@ -724,6 +757,11 @@ def run():
                     ))
                     # Set the time that the last bullet was fired at to now
                     self.time_last_bullet = time.time()
+
+        def dead(self):
+            """The alien is dead"""
+            self.alive = False  # The alien is dead
+            self.turtle.clear()  # Remove the alien drawing from the screen
 
     player = Ship(y(-350))  # Create the player ship
 
@@ -884,7 +922,7 @@ def run():
             aliens_to_delete = []  # Make a list of aliens to be deleted
             # Loop through the aliens which aren't deleted
             for alien in aliens:
-                if alien.turtle.isvisible():  # If the alien is still alive
+                if alien.alive:  # If the alien is still alive
                     # Move the alien in the right direction and by the right
                     # speed
                     alien.turtle.goto(
@@ -902,6 +940,8 @@ def run():
                     # If the alien is at the bottom of its column
                     if alien_bottom_of_column:
                         alien.generate_bullet(len(aliens))  # Generate a bullet
+
+                    alien.draw()  # Draw the alien to the screen
                 else:  # If the alien is dead
                     # Add the alien to the list of aliens to delete
                     aliens_to_delete.append(alien)
@@ -913,7 +953,7 @@ def run():
                 aliens.remove(alien)  # Remove the alien from the list
                 del alien  # Delete the alian from memory
 
-            bullets_to_delete = []  # Make a list of aliens to be deleted
+            bullets_to_delete = []  # Make a list of bullets to be deleted
             for bullet in bullets:  # Loop through the bullets
                 bullet.move(player, aliens)  # Move the bullet
                 # If the bullet is off-screen
