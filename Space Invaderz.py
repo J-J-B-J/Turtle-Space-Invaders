@@ -793,6 +793,12 @@ def run():
             # Get the x and y coordinates of the ship
             tx = self.turtle.xcor()
             ty = self.turtle.ycor()
+
+            # Quick rectangular hit-box, before more precise hit-box
+            if not (tx - x(40) <= x_pos <= tx + x(40) and
+                    ty - y(55) <= y_pos <= ty + y(100)):
+                return False  # Return a no-hit
+
             # If x_pos and y_pos intersect the fins of the ship
             if tx - x(40) <= x_pos <= tx + x(40) and \
                     ty - y(55) <= y_pos <= ty - y(30):
@@ -812,8 +818,8 @@ def run():
                 # Destroy the ship and return a hit
                 self.dead()
                 return True
-            # Return a no-hit
-            return False
+
+            return False  # Return a no-hit
 
         def dead(self):
             """The player is dead"""
@@ -868,7 +874,7 @@ def run():
 
         def intersectspoint(self, x_pos, y_pos) -> bool:
             """Check if the alien intersects a point"""
-            # If the point is in the rectangular hitbox
+            # If the point is in the rectangular hit-box
             if self.turtle.xcor() - x(50) <= x_pos <= self.turtle.xcor() + \
                     x(50) and \
                     self.turtle.ycor() - y(27) <= y_pos <= self.turtle.ycor():
