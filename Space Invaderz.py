@@ -1,4 +1,6 @@
 """A game of space invaderz"""
+#  Copyright (c) 2023 Joshua Lea. Some Rights Reserved.
+
 import json
 import time
 import turtle as t
@@ -31,6 +33,21 @@ def run():
         screen.window_width(), screen.window_height(),
         1300, 900
     )
+
+    # Draw a border on the screen
+    border_turtle = t.Turtle()
+    border_turtle.penup()
+    border_turtle.hideturtle()
+    border_turtle.pencolor(255, 255, 255)
+    border_turtle.width(5)
+    # Draw the border
+    border_turtle.goto(pos(-710, -450))
+    border_turtle.pendown()
+    border_turtle.goto(pos(710, -450))
+    border_turtle.goto(pos(710, 450))
+    border_turtle.goto(pos(-710, 450))
+    border_turtle.goto(pos(-710, -450))
+    border_turtle.penup()
 
     class Bullet:
         """A class to manage a bullet"""
