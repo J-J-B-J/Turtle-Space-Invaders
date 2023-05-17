@@ -110,19 +110,15 @@ def run():
     # Create a list to store the bullets
     bullets = []
 
-    # class HighScore
-
     class Player:
         """A class to hold a player"""
         def __init__(self, name: str, password_en: bool, password_hash=None,
-                     highscores=None):
-            if highscores is None:  # If the parameter highscores is empty
-                highscores = []  # Set highscores to an empty list
+                     highscore=0):
 
             self.name = name  # Player name
             self.password_en = password_en  # Password is enabled?
             self.password_hash = password_hash  # Hash of the password (if any)
-            self.highscores = highscores  # A list of the player's highscores
+            self.highscore = highscore  # The player's highscore
 
         def serialise(self):
             """Convert to a dictionary"""
@@ -130,7 +126,7 @@ def run():
                 "name": self.name,
                 "password_en": self.password_en,
                 "password_hash": self.password_hash,
-                "highscores": self.highscores
+                "highscore": self.highscore
             }
 
     def playerfromdict(player_dict: dict):
@@ -139,7 +135,8 @@ def run():
             return Player(
                 name=player_dict["name"],  # Player name
                 password_en=player_dict["password_en"],  # Password is enabled
-                password_hash=player_dict["password_hash"]  # Hash of password
+                password_hash=player_dict["password_hash"],  # Hash of password
+                highscore=player_dict["highscore"]  # Player highscore
             )
         except KeyError:
             return None  # Error, return nothing
@@ -168,6 +165,27 @@ def run():
             # Store the last time the score was decreased (needed because you
             # lose a point for every second you take)
             self.last_score_decrease = time.time()
+
+        def game_over(self):
+            """Function to be called when the game ends, to save the scores"""
+            if self.players:  # If there is at least one player created
+                alltime_high = max([a.highscore for a in self.players])
+            else:  # If there are no players
+                alltime_high = 0  # No high score
+
+            if self.score > alltime_high:
+                high = 2  # Alltime highscore
+            elif self.player == "guest":  # If the player isn't logged in
+                high = 0  # No highscore
+            elif self.score > self.player.highscore:  # If it's a personal best
+                high = 1  # Personal best
+            else:
+                high = 0
+
+            if high > 0 and self.player != "guest":
+                self.player.highscore = self.score  # Set the new high score
+                self.save()  # Save the data
+            return high  # Return the high status
 
         def login(self):
             """Login a player"""
@@ -912,9 +930,17 @@ def run():
 
     def end_screen(win: bool):
         """Show the end screen"""
+        # Increase or decrease the score for winning or losing
+        if win:
+            scorer.increase(50)
+        else:
+            scorer.decrease(50)
+
         # Clear the screen
         screen.clearscreen()
         screen.bgcolor(0, 0, 0)
+
+        scorer.draw_score()  # Draw the score
 
         # Create a turtle to draw the end screen stuff
         end_turtle = t.Turtle()
@@ -971,7 +997,26 @@ def run():
                 align="center",
                 font=("Helvetica", int(y(20)), "normal")
             )
-        wait_ms(1000, screen)  # Wait a second, while updating the screen
+
+        # Deal with the high score
+        high = scorer.game_over()  # Save the highscore (if any)
+        if high > 0:  # If there was some form of high score
+            wait_ms(500, screen)
+            end_turtle.goto(pos(0, 320))
+        if high == 1:  # If there is a personal best
+            end_turtle.write(
+                "New Personal Best!!",
+                align="center",
+                font=("Helvetica", int(y(20)), "normal")
+            )
+        elif high == 2:  # If there is a high score
+            end_turtle.write(
+                "New High Score!!",
+                align="center",
+                font=("Helvetica", int(y(20)), "normal")
+            )
+
+        wait_ms(500, screen)  # Wait a second, while updating the screen
         # Go to the position for writing the exit text
         end_turtle.goto(pos(0, -50))
         # Write the exit text
