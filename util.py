@@ -14,13 +14,13 @@ def optimised_coord_funcs(width, height, original_width, original_height):
         return (original_dimension / design_size) * production_size
 
     if relative_width > relative_height:
-        # The screen is slightly wider than wanted, so the top and bottom edges
+        # The screen is slightly wider than wanted, so the left and right edges
         # will be unused
         x = lambda num: coord(num, original_width,
                               (height / original_height) * original_width)
         y = lambda num: coord(num, original_height, height)
     elif relative_height > relative_width:
-        # The screen is slightly taller than wanted, so the left and right
+        # The screen is slightly taller than wanted, so the top and bottom
         # edges will be unused
         x = lambda num: coord(num, original_width, width)
         y = lambda num: coord(num, original_height,

@@ -5,7 +5,6 @@ import json
 import time
 import turtle as t
 from util import *
-from importlib import reload
 from random import randint, choice
 from tkinter.messagebox import showwarning, showerror, askyesno
 from tkinter import *
@@ -13,7 +12,6 @@ from json import load, dump, JSONDecodeError
 from hashlib import sha256
 from sys import exit
 
-reload(t)
 # Get the screen
 screen = t.getscreen()
 
@@ -52,17 +50,14 @@ class Bullet:
     """A class to manage a bullet"""
 
     def __init__(self, x_pos, y_pos, speed=y(10), length=y(1),
-                 width=x(0.4), fired_by_player=True):
+                 width=x(0.4), fired_by_player=True, color=(230, 84, 45)):
         self.speed = speed
         self.turtle = t.Turtle()  # Create a turtle to act as the bullet
         # Move the turtle to the right position and make it look right
         self.turtle.penup()
         self.turtle.goto(x_pos, y_pos)
         self.turtle.shape("square")
-        if fired_by_player:
-            self.turtle.fillcolor(230, 84, 45)
-        else:
-            self.turtle.fillcolor(9, 158, 29)
+        self.turtle.fillcolor(color)
         self.turtle.shapesize(length, width, 0)
         # Was this bullet fired by the player or an alien?
         self.fired_by_player = fired_by_player
@@ -829,21 +824,18 @@ class Ship:
         # If x_pos and y_pos intersect the fins of the ship
         if tx - x(40) <= x_pos <= tx + x(40) and \
                 ty - y(55) <= y_pos <= ty - y(30):
-            # Destroy the ship and return a hit
-            self.dead()
+            # Return a hit
             return True
         # If x_pos and y_pos intersect the passenger section of the ship
         if tx - x(25) <= x_pos <= tx + x(25) and \
                 ty - y(55) <= y_pos <= ty + y(45):
-            # Destroy the ship and return a hit
-            self.dead()
+            # Return a hit
             return True
         # If x_pos and y_pos intersect the nose of the ship
         if (y_pos - ty) < -2.2 * (x_pos - tx) + x(100) and \
                 (y_pos - ty) < 2.2 * (x_pos - tx) + x(100) and \
                 y_pos - ty > y(45):
-            # Destroy the ship and return a hit
-            self.dead()
+            # Return a hit
             return True
 
         return False  # Return a no-hit
@@ -869,6 +861,15 @@ class Alien:
 
         self.alive = True  # The alien is alive to start
 
+    def get_colour(self):
+        """Get the colour of the alien based on the level"""
+        if self.level == 5:
+            return 9, 158, 29
+        elif self.level == 10:
+            return 50, 100, 168
+        else:
+            return 168, 50, 50
+
     def draw(self):
         """Draw myself to the screen"""
         self.turtle.clear()  # Clear the previous drawing
@@ -889,7 +890,7 @@ class Alien:
         self.turtle.end_fill()
 
         # Set the fill colour and start filling
-        self.turtle.fillcolor(9, 158, 29)
+        self.turtle.fillcolor(self.get_colour())
         self.turtle.goto(initial_x - x(24), initial_y)
         self.turtle.begin_fill()
         # Draw the Capsule of the alien
@@ -907,15 +908,18 @@ class Alien:
         if self.turtle.xcor() - x(50) <= x_pos <= self.turtle.xcor() + \
                 x(50) and \
                 self.turtle.ycor() - y(27) <= y_pos <= self.turtle.ycor():
-            self.dead()  # Destroy the alien
             return True  # Return a hit
         else:
             return False  # Return a no-hit
 
     def generate_bullet(self, alien_count):
         """Fire a bullet"""
-        # If a random number scaled to the number of aliens is 0
-        if randint(0, 1500 - (24 * (55 - alien_count))) == 0:
+        # If a random number scaled to the number of aliens and the alien's
+        # level is 0
+        if randint(
+                0,
+                int(1500 - 24 * (55 - ((2*self.level*alien_count) / 12)))
+        ) == 0:
             # If the last bullet was fired more than 2 seconds ago
             if self.time_last_bullet < time.time() - 2:
                 # Fire a bullet at the player
@@ -923,22 +927,34 @@ class Alien:
                     self.turtle.xcor(),
                     self.turtle.ycor(),
                     y(-4),
-                    fired_by_player=False
+                    fired_by_player=False,
+                    color=self.get_colour()
                 ))
                 # Set the time that the last bullet was fired at to now
                 self.time_last_bullet = time.time()
 
     def dead(self):
         """The alien is dead"""
-        self.alive = False  # The alien is dead
-        self.turtle.clear()  # Remove the alien drawing from the screen
+        if self.level == 5:
+            self.alive = False  # The alien is dead
+            self.turtle.clear()  # Remove the alien drawing from the screen
+        else:
+            self.level -= 5  # Decrease the level by 5
 
 
 player = Ship(y(-350))  # Create the player ship
 
 # Create the aliens
-aliens = [Alien(x(x_pos), y(y_pos), 1) for x_pos in range(-550, 551, 110)
-          for y_pos in range(0, 301, 75)]
+aliens = []
+for alien_x in range(-550, 551, 110):
+    for alien_y in range(0, 301, 75):
+        if alien_y <= 75:
+            alien_level = 5
+        elif alien_y <= 255:
+            alien_level = 10
+        else:
+            alien_level = 15
+        aliens.append(Alien(x(alien_x), y(alien_y), alien_level))
 
 
 def end_screen(win: bool):
@@ -1152,7 +1168,7 @@ while True:  # Forever
                 # Add the alien to the list of aliens to delete
                 aliens_to_delete.append(alien)
                 # Increase the score relative to the alien's level
-                scorer.increase(10 * alien.level)
+                scorer.increase(alien.level)
 
         # Loop through the aliens to be deleted
         for alien in aliens_to_delete:
