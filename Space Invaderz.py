@@ -86,11 +86,9 @@ class Bullet:
                         self.turtle.xcor(),
                         self.turtle.ycor()
                 ):
-                    # If it has, destroy the alien and the bullet, then
-                    # exit this function
+                    # If it has, destroy the alien and the bullet
                     alien.dead()
                     self.turtle.hideturtle()
-                    break
         else:  # If the bullet was fired by an alien
             # If the bullet has hit the player
             if game_player.intersectspoint(
@@ -218,6 +216,70 @@ class Scorer:
         for this_player in self.players:
             player_list.insert(END, this_player.name)
 
+        # Create a label to say "Password:"
+        password_label = Label(
+            master=login_window,
+            text="Password:"
+        )
+        password_label.pack()
+
+        # Create a StringVar and an entry widget to get the password
+        password_var = StringVar(master=login_window)
+        password_input = Entry(
+            master=login_window,
+            textvariable=password_var,
+            show="✱"
+        )
+        password_input.pack()
+
+        def check_login() -> (bool, str or Player):
+            """Check if the entered credentials are correct for login and
+            account deletion."""
+            # If there is no selected username
+            if not player_list.curselection():
+                # Return a failure due to no selection
+                return False, "noSelect"
+            # Get the player object with the selected username
+            logging_in_player = self.players[player_list.curselection()[0]]
+            # If the password hashes match, or if the password is disabled
+            if sha256(password_var.get().encode()).hexdigest() == \
+                    logging_in_player.password_hash or not \
+                    logging_in_player.password_en:
+                # Return a success and the player object
+                return True, logging_in_player
+            else:
+                # Return a failure due to an incorrect password
+                return False, "wrongPassword"
+
+        def login():
+            """Callback for loggin a player in"""
+            nonlocal logged_in
+            # Check the entered credentials
+            success, result = check_login()
+            if success:  # If the credentials are correct
+                # Log in the player
+                self.player = result
+                logged_in = True
+            elif result == "noSelect":  # If a username was not selected
+                # Tell the user that a username was not selected
+                showerror(message="Please select a username!")
+            else:  # If the username and password don't match
+                # Tell the user that the username and password don't match
+                showerror(message="Incorrect username or password!")
+
+        def guest_login():
+            """Callback for logging in as a guest"""
+            nonlocal logged_in
+            # Ask the user if they are sure they want to use guest mode
+            use_guest = askyesno(
+                message="Using a guest account will not save your scores."
+                        "\nDo you want to continue as a guest?"
+            )
+            if use_guest:  # If the user is sure
+                # Activate guest mode
+                self.player = "guest"
+                logged_in = True
+
         def add_player():
             """Callback for creating a new player"""
             # Create a window for creating a player
@@ -320,7 +382,7 @@ class Scorer:
                     # cancel the submission
                     showerror(message="Passwords do not match!")
                     return
-                # if a name was not entered
+                # If a name was not entered
                 if new_playername == "":
                     # Tell the user that a name was not entered and cancel
                     # the submission
@@ -373,58 +435,10 @@ class Scorer:
                 # Update the window
                 new_player_window.update()
 
-        def check_login(password: str) -> (bool, str or Player):
-            """Check if the entered credentials are correct for login and
-            account deletion."""
-            # If there is no selected username
-            if not player_list.curselection():
-                # Return a failure due to no selection
-                return False, "noSelect"
-            # Get the player object with the selected username
-            logging_in_player = self.players[player_list.curselection()[0]]
-            # If the password hashes match, or if the password is disabled
-            if sha256(password.encode()).hexdigest() == \
-                    logging_in_player.password_hash or not \
-                    logging_in_player.password_en:
-                # Return a success and the player object
-                return True, logging_in_player
-            else:
-                # Return a failure due to an incorrect password
-                return False, "wrongPassword"
-
-        def login():
-            """Callback for loggin a player in"""
-            nonlocal logged_in
-            # Check the entered credentials
-            success, result = check_login(password_var.get())
-            if success:  # If the credentials are correct
-                # Log in the player
-                self.player = result
-                logged_in = True
-            elif result == "noSelect":  # If a username was not selected
-                # Tell the user that a username was not selected
-                showerror(message="Please select a username!")
-            else:  # If the username and password don't match
-                # Tell the user that the username and password don't match
-                showerror(message="Incorrect username or password!")
-
-        def guest_login():
-            """Callback for logging in as a guest"""
-            nonlocal logged_in
-            # Ask the user if they are sure they want to use guest mode
-            use_guest = askyesno(
-                message="Using a guest account will not save your scores."
-                        "\nDo you want to continue as a guest?"
-            )
-            if use_guest:  # If the user is sure
-                # Activate guest mode
-                self.player = "guest"
-                logged_in = True
-
         def delete_player():
             """Callback for deleting the selected account"""
             # Check the entered credentials
-            success, result = check_login(password_var.get())
+            success, result = check_login()
             if success:  # If the credentials are correct
                 # Ask the user if they are sure they want to delete the
                 # player
@@ -443,22 +457,6 @@ class Scorer:
             else:  # If the username and password don't match
                 # Tell the user that the username and password don't match
                 showerror(message="Incorrect username or password!")
-
-        # Create a label to say "Password:"
-        password_label = Label(
-            master=login_window,
-            text="Password:"
-        )
-        password_label.pack()
-
-        # Create a StringVar and an entry widget to get the password
-        password_var = StringVar(master=login_window)
-        password_input = Entry(
-            master=login_window,
-            textvariable=password_var,
-            show="✱"
-        )
-        password_input.pack()
 
         # Create the buttons
 
@@ -571,7 +569,7 @@ class Scorer:
         if int(time.time() - self.last_score_decrease) >= 1:
             # Decrease the score by the number of seconds
             self.decrease(int(time.time() - self.last_score_decrease))
-            # Set the last time the score was decreased to right now
+            # Set the last time the score was decreased to now
             self.last_score_decrease = time.time()
 
         # Clear the previous score
@@ -599,8 +597,8 @@ class Ship:
         self.turtle.hideturtle()
         self.turtle.penup()
         self.turtle.goto(0, y_pos)
-        self.activate_controls()  # Activate the controls
         self.firing = False  # Not firing right now
+        self.activate_controls()  # Activate the controls
         # Save the time since the last bullet
         self.time_last_bullet = time.time() - 60
 
@@ -719,11 +717,11 @@ class Ship:
         """Move"""
         self.generate_bullet()  # Generate a bullet if needed
 
-        # If the ship, after moving, will be more left than it should be
+        # If the ship, after moving, will be further left than it should be
         if self.turtle.xcor() + (self.movement * self.speed) < x(-650):
             # Move the ship to the furthest left it can go
             self.turtle.goto(x(-650), self.turtle.ycor())
-        # If the ship, after moving, will be more right than it should be
+        # If the ship, after moving, will be further right than it should be
         elif self.turtle.xcor() + (self.movement * self.speed) > x(650):
             # Move the ship to the furthest right it can go
             self.turtle.goto(x(650), self.turtle.ycor())
@@ -748,19 +746,8 @@ class Ship:
         else:  # If the ship is moving left
             self.movement = 0  # Stop moving
 
-    def end_left(self):
-        """Stop moving left"""
-        if self.movement == 0:  # If the ship is not moving
-            self.movement = 1  # Start moving right
-        else:  # If the ship is moving left
-            self.movement = 0  # Stop moving
-
-    def end_right(self):
-        """Stop moving right"""
-        if self.movement == 0:  # If the ship is not moving
-            self.movement = -1  # Start moving left
-        else:  # If the ship is moving right
-            self.movement = 0  # Stop moving
+    end_left = beg_right
+    end_right = beg_left
 
     def beg_fire(self):
         """Start firing"""
@@ -803,7 +790,7 @@ class Ship:
             # Fire a bullet from the ship's nose
             bullets.append(Bullet(
                 self.turtle.xcor(),
-                self.turtle.ycor() + 80,
+                self.turtle.ycor() + y(100),
             ))
             # Set the last time a bullet was fired to now
             self.time_last_bullet = time.time()
@@ -852,8 +839,8 @@ class Alien:
     def __init__(self, x_pos, y_pos, level):
         self.turtle = t.Turtle()  # Create a turtle for the alien
         # Make the turtle look right
-        self.turtle.penup()
         self.turtle.hideturtle()
+        self.turtle.penup()
         self.turtle.goto(x_pos, y_pos)
         # Set the last time a bullet was fired to a minute ago
         self.time_last_bullet = time.time() - 60
@@ -993,7 +980,7 @@ def end_screen(win: bool):
             align="center",
             font=("Helvetica", int(y(50)), "normal")
         )
-    wait_ms(500, screen)  # Wait half a second, while updating the screen
+    wait_ms(500, screen)  # Wait half a second while updating the screen
     # Go to the position for writing the comment
     end_turtle.goto(pos(0, -25))
 
@@ -1045,7 +1032,7 @@ def end_screen(win: bool):
             font=("Helvetica", int(y(20)), "normal")
         )
 
-    wait_ms(500, screen)  # Wait a second, while updating the screen
+    wait_ms(500, screen)  # Wait a second while updating the screen
     # Go to the position for writing the exit text
     end_turtle.goto(pos(0, -50))
     # Write the exit text
@@ -1117,7 +1104,7 @@ while True:  # Forever
 
         # If the aliens are too close to the player, or if the player is
         # dead
-        if min_alien_y < y(-180) or (not player.alive):
+        if min_alien_y < y(-170) or (not player.alive):
             # End the game with the player losing
             end_screen(False)
             exit()
@@ -1167,7 +1154,7 @@ while True:  # Forever
             else:  # If the alien is dead
                 # Add the alien to the list of aliens to delete
                 aliens_to_delete.append(alien)
-                # Increase the score relative to the alien's level
+                # Increase the score by the alien's level
                 scorer.increase(alien.level)
 
         # Loop through the aliens to be deleted
@@ -1179,7 +1166,7 @@ while True:  # Forever
         for bullet in bullets:  # Loop through the bullets
             bullet.move(player, aliens)  # Move the bullet
             # If the bullet is off-screen
-            if bullet.turtle.ycor() < y(-500):
+            if not y(500) > bullet.turtle.ycor() > y(-500):
                 # Add the bullet to the list of bullets to delete
                 bullets_to_delete.append(bullet)
 
